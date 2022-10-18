@@ -1,8 +1,11 @@
 package com.pszemek.mtjworldcupstandings.entity;
 
+import lombok.Getter;
+
 import javax.persistence.*;
 import java.math.BigDecimal;
 
+@Getter
 @Entity(name = "users")
 public class User {
     @Id

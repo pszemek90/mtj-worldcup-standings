@@ -22,13 +22,13 @@ public class MatchesService {
     private final Logger logger = LoggerFactory.getLogger(MatchesService.class);
 
     private final RestTemplate restTemplate;
-    private final LoginRequest loginRequest;
+    private final ApiLoginRequest apiLoginRequest;
 
     private final MatchTypingRepository matchTypingRepository;
 
-    public MatchesService(RestTemplate restTemplate, LoginRequest loginRequest, MatchTypingRepository matchTypingRepository) {
+    public MatchesService(RestTemplate restTemplate, ApiLoginRequest apiLoginRequest, MatchTypingRepository matchTypingRepository) {
         this.restTemplate = restTemplate;
-        this.loginRequest = loginRequest;
+        this.apiLoginRequest = apiLoginRequest;
         this.matchTypingRepository = matchTypingRepository;
     }
 
@@ -73,7 +73,7 @@ public class MatchesService {
     }
 
     private void getNewBearerToken() {
-        HttpEntity<LoginRequest> request = new HttpEntity<>(loginRequest);
+        HttpEntity<ApiLoginRequest> request = new HttpEntity<>(apiLoginRequest);
         ResponseEntity<BearerTokenDto> bearerTokenResponseEntity = restTemplate.postForEntity("http://api.cup2022.ir/api/v1/user/login", request, BearerTokenDto.class);
         BearerTokenDto responseBody = bearerTokenResponseEntity.getBody();
         if (responseBody != null && responseBody.getToken() != null) {
