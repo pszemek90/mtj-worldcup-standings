@@ -1,5 +1,7 @@
 package com.pszemek.mtjworldcupstandings.security;
 
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +15,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import javax.crypto.SecretKey;
 
 @Configuration
 @EnableWebSecurity
@@ -32,6 +36,11 @@ public class WebSecurityConfig {
     @Bean
     public AuthTokenFilter authenticationTokenFilter(){
         return new AuthTokenFilter();
+    }
+
+    @Bean
+    public SecretKey getSecretKey(){
+        return Keys.secretKeyFor(SignatureAlgorithm.HS512);
     }
 
     @Bean

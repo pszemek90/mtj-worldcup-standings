@@ -1,5 +1,6 @@
 package com.pszemek.mtjworldcupstandings.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pszemek.mtjworldcupstandings.configuration.CurrentBearerToken;
 import com.pszemek.mtjworldcupstandings.dto.*;
 import com.pszemek.mtjworldcupstandings.entity.MatchTyping;
@@ -9,8 +10,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.File;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -32,6 +36,14 @@ public class MatchesService {
         this.matchTypingRepository = matchTypingRepository;
     }
 
+    public List<FootballMatchOutput> getMatchesForToday(String stringDate) {
+        logger.info("Getting matches for {}", stringDate);
+        LocalDate date = LocalDate.parse(stringDate);
+        return getAllMatches().stream()
+                .filter(match -> match.getDate().toLocalDate().equals(date))
+                .collect(Collectors.toList());
+    }
+
     //todo refactor!
     public List<FootballMatchOutput> getAllMatches() {
         HttpHeaders headers = new HttpHeaders();
@@ -51,7 +63,12 @@ public class MatchesService {
             if(response != null) {
                 logger.warn("Call to api returned {} code, getting new Bearer token", response.getStatusCode());
             }
-            getNewBearerToken();
+            try {
+                getNewBearerToken();
+            } catch(HttpClientErrorException ex2) {
+                logger.error("API issue, falling back to plain JSON");
+                return getMatchesFromPlainJson();
+            }
             headers.setBearerAuth(CurrentBearerToken.getToken());
             headers.setContentType(MediaType.APPLICATION_JSON);
             httpEntity = new HttpEntity<>(headers);
@@ -64,17 +81,15 @@ public class MatchesService {
         }
     }
 
-    public List<FootballMatchOutput> getMatchesForToday(String stringDate) {
-        logger.info("Getting matches for {}", stringDate);
-        LocalDate date = LocalDate.parse(stringDate);
-        return getAllMatches().stream()
-                .filter(match -> match.getDate().toLocalDate().equals(date))
-                .collect(Collectors.toList());
-    }
-
     private void getNewBearerToken() {
         HttpEntity<ApiLoginRequest> request = new HttpEntity<>(apiLoginRequest);
-        ResponseEntity<BearerTokenDto> bearerTokenResponseEntity = restTemplate.postForEntity("http://api.cup2022.ir/api/v1/user/login", request, BearerTokenDto.class);
+        ResponseEntity<BearerTokenDto> bearerTokenResponseEntity;
+        try {
+            bearerTokenResponseEntity = restTemplate.postForEntity("http://api.cup2022.ir/api/v1/user/login", request, BearerTokenDto.class);
+        } catch (Exception ex) {
+            logger.error("Exception while making rest call to api: {}", ex.getMessage());
+            throw new HttpClientErrorException(HttpStatus.BAD_GATEWAY ,"Server error while getting new Bearer token");
+        }
         BearerTokenDto responseBody = bearerTokenResponseEntity.getBody();
         if (responseBody != null && responseBody.getToken() != null) {
             logger.info("Setting new Bearer token");
@@ -82,6 +97,20 @@ public class MatchesService {
         } else {
             logger.error("Something went wrong with login response. Returned body: {} ", responseBody);
         }
+    }
+
+    private List<FootballMatchOutput> getMatchesFromPlainJson() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            MatchesInputResponse plainJsonResponse = objectMapper.readValue(new File("src/main/resources/all_matches.json"), MatchesInputResponse.class);
+            List<FootballMatchInput> matchInputs = plainJsonResponse.getMatches();
+            if(matchInputs != null){
+                return FootballMatchMapper.mapFromInput(matchInputs);
+            }
+        } catch (IOException e) {
+            logger.error("Couldn't read from plain JSON. Reason: {}", e.getMessage());
+        }
+        return List.of();
     }
 
     public void saveTypings(Typings typings) {

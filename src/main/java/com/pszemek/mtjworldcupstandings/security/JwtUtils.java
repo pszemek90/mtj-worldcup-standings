@@ -2,15 +2,16 @@ package com.pszemek.mtjworldcupstandings.security;
 
 import com.pszemek.mtjworldcupstandings.dto.UserDto;
 import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.security.Key;
 import java.util.Date;
 
 @Component
@@ -18,29 +19,28 @@ public class JwtUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
 
-//    @Value("${jwtSecret}")
-//    private String jwtSecret;
+    @Autowired
+    private SecretKey key;
 
     @Value("${jwtExpirationMs}")
     private int jwtExpirationMs;
 
     public String generateJwtToken(Authentication authentication) {
         UserDto principal = (UserDto) authentication.getPrincipal();
-        SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS512);
         return Jwts.builder()
                 .setSubject(principal.getUsername())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
-                .signWith(key)
+                .signWith(key, SignatureAlgorithm.HS512)
                 .compact();
     }
 
     public boolean validateJwtToken(String authToken) {
         try {
             Jwts.parserBuilder()
-                    .setSigningKey(Keys.secretKeyFor(SignatureAlgorithm.HS512))
+                    .setSigningKey(key)
                     .build()
-                    .parseClaimsJwt(authToken);
+                    .parseClaimsJws(authToken);
             return true;
         } catch (SignatureException e) {
             logger.error("Invalid JWT signature: {}", e.getMessage());
@@ -59,9 +59,9 @@ public class JwtUtils {
 
     public String getUsernameFromJwtToken(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(Keys.secretKeyFor(SignatureAlgorithm.HS512))
+                .setSigningKey(key)
                 .build()
-                .parseClaimsJwt(token)
+                .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
     }
