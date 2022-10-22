@@ -8,6 +8,7 @@ import com.pszemek.mtjworldcupstandings.mapper.FootballMatchMapper;
 import com.pszemek.mtjworldcupstandings.repository.MatchTypingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -25,9 +26,17 @@ public class MatchesService {
 
     private final Logger logger = LoggerFactory.getLogger(MatchesService.class);
 
+    @Value("${api.all.matches.url}")
+    private String allMatchesUrl;
+
+    @Value("${api.login.url}")
+    private String loginUrl;
+
+    @Value("${fallback.json.path}")
+    private String fallbackJsonPath;
+
     private final RestTemplate restTemplate;
     private final ApiLoginRequest apiLoginRequest;
-
     private final MatchTypingRepository matchTypingRepository;
 
     public MatchesService(RestTemplate restTemplate, ApiLoginRequest apiLoginRequest, MatchTypingRepository matchTypingRepository) {
@@ -52,7 +61,7 @@ public class MatchesService {
         HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
         ResponseEntity<MatchesInputResponse> response = null;
         try {
-            response = restTemplate.exchange("http://api.cup2022.ir/api/v1/match", HttpMethod.GET, httpEntity, MatchesInputResponse.class);
+            response = restTemplate.exchange(allMatchesUrl, HttpMethod.GET, httpEntity, MatchesInputResponse.class);
             logger.info("Call to api returned {} code", response.getStatusCode());
             List<FootballMatchInput> matchInputs = response.getBody().getMatches();
             if(matchInputs != null){
@@ -72,7 +81,7 @@ public class MatchesService {
             headers.setBearerAuth(CurrentBearerToken.getToken());
             headers.setContentType(MediaType.APPLICATION_JSON);
             httpEntity = new HttpEntity<>(headers);
-            response = restTemplate.exchange("http://api.cup2022.ir/api/v1/match", HttpMethod.GET, httpEntity, MatchesInputResponse.class);
+            response = restTemplate.exchange(allMatchesUrl, HttpMethod.GET, httpEntity, MatchesInputResponse.class);
             List<FootballMatchInput> matchInputs = response.getBody().getMatches();
             if(matchInputs != null){
                 return FootballMatchMapper.mapFromInput(matchInputs);
@@ -85,7 +94,7 @@ public class MatchesService {
         HttpEntity<ApiLoginRequest> request = new HttpEntity<>(apiLoginRequest);
         ResponseEntity<BearerTokenDto> bearerTokenResponseEntity;
         try {
-            bearerTokenResponseEntity = restTemplate.postForEntity("http://api.cup2022.ir/api/v1/user/login", request, BearerTokenDto.class);
+            bearerTokenResponseEntity = restTemplate.postForEntity(loginUrl, request, BearerTokenDto.class);
         } catch (Exception ex) {
             logger.error("Exception while making rest call to api: {}", ex.getMessage());
             throw new HttpClientErrorException(HttpStatus.BAD_GATEWAY ,"Server error while getting new Bearer token");
@@ -102,7 +111,7 @@ public class MatchesService {
     private List<FootballMatchOutput> getMatchesFromPlainJson() {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
-            MatchesInputResponse plainJsonResponse = objectMapper.readValue(new File("src/main/resources/all_matches.json"), MatchesInputResponse.class);
+            MatchesInputResponse plainJsonResponse = objectMapper.readValue(new File(fallbackJsonPath), MatchesInputResponse.class);
             List<FootballMatchInput> matchInputs = plainJsonResponse.getMatches();
             if(matchInputs != null){
                 return FootballMatchMapper.mapFromInput(matchInputs);
