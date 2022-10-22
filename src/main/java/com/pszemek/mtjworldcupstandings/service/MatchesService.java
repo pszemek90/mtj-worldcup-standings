@@ -17,6 +17,8 @@ import org.springframework.web.client.RestTemplate;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -48,9 +50,20 @@ public class MatchesService {
     public List<FootballMatchOutput> getMatchesForToday(String stringDate) {
         logger.info("Getting matches for {}", stringDate);
         LocalDate date = LocalDate.parse(stringDate);
-        return getAllMatches().stream()
+        List<FootballMatchOutput> todaysMatches = getAllMatches().stream()
                 .filter(match -> match.getDate().toLocalDate().equals(date))
                 .collect(Collectors.toList());
+        //todo just for testing in dev, delete before prod move
+        if(date.isEqual(LocalDate.now())) {
+            todaysMatches.add(new FootballMatchOutput()
+                    .setDate(LocalDateTime.of(LocalDate.now(), LocalTime.of(20, 0)))
+                    .setId(999)
+                    .setAwayScore(0)
+                    .setHomeScore(0)
+                    .setAwayTeam("testTeam1")
+                    .setHomeTeam("testTeam2"));
+        }
+        return todaysMatches;
     }
 
     //todo refactor!
