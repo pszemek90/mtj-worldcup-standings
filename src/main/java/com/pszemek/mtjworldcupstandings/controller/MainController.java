@@ -12,6 +12,7 @@ import java.util.List;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:5173")
+@RequestMapping("/matches")
 public class MainController {
 
     private final Logger logger = LoggerFactory.getLogger(MainController.class);
@@ -22,17 +23,17 @@ public class MainController {
         this.matchesService = matchesService;
     }
 
-    @GetMapping("/matches")
+    @GetMapping()
     public List<FootballMatchOutput> getAllMatches() {
         return matchesService.getAllMatches();
     }
 
-    @GetMapping("/matches/today")
+    @GetMapping("/today")
     public List<FootballMatchOutput> getTodayMatches(String date) {
         return matchesService.getMatchesForToday(date);
     }
 
-    @PostMapping("/matches/typings")
+    @PostMapping("/typings")
     public void sendTypings(@RequestBody Typings typings) {
         logger.info("Saving typings for userId: {}", typings.getUserId());
         matchesService.saveTypings(typings);

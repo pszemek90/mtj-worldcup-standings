@@ -151,7 +151,8 @@ public class MatchesService {
                         .setUserId(userId)
                         .setAwayScore(match.getAwayScore())
                         .setHomeScore(match.getHomeScore())
-                        .setMatchId(match.getId());
+                        .setMatchId(match.getId())
+                        .setMatchDate(match.getDate().toLocalDate());
                 matchTypingRepository.save(typing);
             }
         }
