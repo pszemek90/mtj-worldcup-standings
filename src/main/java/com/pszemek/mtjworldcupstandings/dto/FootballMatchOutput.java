@@ -50,4 +50,16 @@ public class FootballMatchOutput {
         this.date = date;
         return this;
     }
+
+    @Override
+    public String toString() {
+        return "FootballMatchOutput{" +
+                "id=" + id +
+                ", awayScore=" + awayScore +
+                ", homeScore=" + homeScore +
+                ", awayTeam='" + awayTeam + '\'' +
+                ", homeTeam='" + homeTeam + '\'' +
+                ", date=" + date +
+                '}';
+    }
 }

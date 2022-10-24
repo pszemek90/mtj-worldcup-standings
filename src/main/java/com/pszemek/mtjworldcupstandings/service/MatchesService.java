@@ -150,7 +150,9 @@ public class MatchesService {
                 MatchTyping typing = new MatchTyping()
                         .setUserId(userId)
                         .setAwayScore(match.getAwayScore())
+                        .setAwayTeam(match.getAwayTeam())
                         .setHomeScore(match.getHomeScore())
+                        .setHomeTeam(match.getHomeTeam())
                         .setMatchId(match.getId())
                         .setMatchDate(match.getDate().toLocalDate());
                 matchTypingRepository.save(typing);
