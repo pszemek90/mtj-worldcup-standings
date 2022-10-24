@@ -20,6 +20,8 @@ public class FootballMatchOutput {
     private String homeTeam;
     @JsonProperty("date")
     private LocalDateTime date;
+    @JsonProperty("finished")
+    private Boolean finished;
 
     public FootballMatchOutput setId(Integer id) {
         this.id = id;
@@ -48,6 +50,16 @@ public class FootballMatchOutput {
 
     public FootballMatchOutput setDate(LocalDateTime date) {
         this.date = date;
+        return this;
+    }
+
+    public Boolean isFinished() {
+        return this.finished;
+    }
+
+    //todo for test purposes, probably to delete
+    public FootballMatchOutput setFinished(Boolean finished) {
+        this.finished = finished;
         return this;
     }
 
