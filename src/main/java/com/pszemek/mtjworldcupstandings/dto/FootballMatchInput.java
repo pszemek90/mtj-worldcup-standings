@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.pszemek.mtjworldcupstandings.dto.json.BooleanDeserializer;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
@@ -27,5 +28,8 @@ public class FootballMatchInput {
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     @JsonProperty("local_date")
     private LocalDateTime date;
+    @JsonProperty("finished")
+    @JsonDeserialize(using = BooleanDeserializer.class)
+    private Boolean finished;
 
 }

@@ -14,7 +14,8 @@ public class FootballMatchMapper {
                 .setHomeScore(input.getHomeScore())
                 .setAwayTeam(input.getAwayTeamEn())
                 .setHomeTeam(input.getHomeTeamEn())
-                .setDate(input.getDate());
+                .setDate(input.getDate())
+                .setFinished(input.getFinished());
     }
 
     public static List<FootballMatchOutput> mapFromInput(List<FootballMatchInput> input){

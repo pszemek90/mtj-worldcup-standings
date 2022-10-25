@@ -36,9 +36,9 @@ public class ResultsController {
                 .setAwayScore(0)
                 .setFinished(true);
         allMatches.add(testMatch);
-        List<FootballMatchOutput> testList = List.of(testMatch);
+//        List<FootballMatchOutput> testList = List.of(testMatch);
         Map<LocalDateTime, List<FootballMatchOutput>> finishedMatchesByDate =
-                testList.stream()
+                allMatches.stream()
                 .filter(FootballMatchOutput::isFinished)
                 .collect(Collectors.groupingBy(FootballMatchOutput::getDate));
         Map<String, List<FootballMatchOutput>> finishedMatchesByDateString = new HashMap<>();
