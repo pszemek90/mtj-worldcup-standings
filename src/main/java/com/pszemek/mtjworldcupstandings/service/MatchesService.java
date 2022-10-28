@@ -3,8 +3,11 @@ package com.pszemek.mtjworldcupstandings.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pszemek.mtjworldcupstandings.configuration.CurrentBearerToken;
 import com.pszemek.mtjworldcupstandings.dto.*;
+import com.pszemek.mtjworldcupstandings.entity.Match;
 import com.pszemek.mtjworldcupstandings.entity.MatchTyping;
-import com.pszemek.mtjworldcupstandings.mapper.FootballMatchMapper;
+import com.pszemek.mtjworldcupstandings.mapper.MatchInputOutputMapper;
+import com.pszemek.mtjworldcupstandings.mapper.MatchOutputEntityMapper;
+import com.pszemek.mtjworldcupstandings.repository.MatchRepository;
 import com.pszemek.mtjworldcupstandings.repository.MatchTypingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,11 +43,13 @@ public class MatchesService {
     private final RestTemplate restTemplate;
     private final ApiLoginRequest apiLoginRequest;
     private final MatchTypingRepository matchTypingRepository;
+    private final MatchRepository matchRepository;
 
-    public MatchesService(RestTemplate restTemplate, ApiLoginRequest apiLoginRequest, MatchTypingRepository matchTypingRepository) {
+    public MatchesService(RestTemplate restTemplate, ApiLoginRequest apiLoginRequest, MatchTypingRepository matchTypingRepository, MatchRepository matchRepository) {
         this.restTemplate = restTemplate;
         this.apiLoginRequest = apiLoginRequest;
         this.matchTypingRepository = matchTypingRepository;
+        this.matchRepository = matchRepository;
     }
 
     public List<FootballMatchOutput> getMatchesForToday(String stringDate) {
@@ -66,42 +71,10 @@ public class MatchesService {
         return todaysMatches;
     }
 
-    //todo refactor!
     public List<FootballMatchOutput> getAllMatches() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(CurrentBearerToken.getToken());
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
-        ResponseEntity<MatchesInputResponse> response = null;
-        try {
-            response = restTemplate.exchange(allMatchesUrl, HttpMethod.GET, httpEntity, MatchesInputResponse.class);
-            logger.info("Call to api returned {} code", response.getStatusCode());
-            List<FootballMatchInput> matchInputs = response.getBody().getMatches();
-            if(matchInputs != null){
-                return FootballMatchMapper.mapFromInput(matchInputs);
-            }
-            return List.of();
-        } catch (Exception ex) {
-            if(response != null) {
-                logger.warn("Call to api returned {} code, getting new Bearer token", response.getStatusCode());
-            }
-            try {
-                getNewBearerToken();
-            } catch(HttpClientErrorException ex2) {
-                logger.error("API issue, falling back to plain JSON");
-                return getMatchesFromPlainJson();
-            }
-            headers.setBearerAuth(CurrentBearerToken.getToken());
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            httpEntity = new HttpEntity<>(headers);
-            response = restTemplate.exchange(allMatchesUrl, HttpMethod.GET, httpEntity, MatchesInputResponse.class);
-            List<FootballMatchInput> matchInputs = response.getBody().getMatches();
-            if(matchInputs != null){
-                return FootballMatchMapper.mapFromInput(matchInputs);
-            }
-            return List.of();
+        List<Match> matchesFromDb = matchRepository.findAll();
+        return MatchOutputEntityMapper.mapFromEntity(matchesFromDb);
         }
-    }
 
     private void getNewBearerToken() {
         HttpEntity<ApiLoginRequest> request = new HttpEntity<>(apiLoginRequest);
@@ -127,7 +100,7 @@ public class MatchesService {
             MatchesInputResponse plainJsonResponse = objectMapper.readValue(new File(fallbackJsonPath), MatchesInputResponse.class);
             List<FootballMatchInput> matchInputs = plainJsonResponse.getMatches();
             if(matchInputs != null){
-                return FootballMatchMapper.mapFromInput(matchInputs);
+                return MatchInputOutputMapper.mapFromInput(matchInputs);
             }
         } catch (IOException e) {
             logger.error("Couldn't read from plain JSON. Reason: {}", e.getMessage());
@@ -158,5 +131,10 @@ public class MatchesService {
                 matchTypingRepository.save(typing);
             }
         }
+    }
+
+    public void saveAllMatches(List<FootballMatchOutput> matchesFromApi) {
+        List<Match> matchEntities = MatchOutputEntityMapper.mapFromOutput(matchesFromApi);
+        matchRepository.saveAll(matchEntities);
     }
 }

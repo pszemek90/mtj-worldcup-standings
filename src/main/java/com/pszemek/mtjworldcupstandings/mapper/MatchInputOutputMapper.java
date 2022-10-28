@@ -6,7 +6,7 @@ import com.pszemek.mtjworldcupstandings.dto.FootballMatchOutput;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class FootballMatchMapper {
+public class MatchInputOutputMapper {
     public static FootballMatchOutput mapFromInput(FootballMatchInput input){
         return new FootballMatchOutput()
                 .setId(input.getId())
@@ -19,6 +19,6 @@ public class FootballMatchMapper {
     }
 
     public static List<FootballMatchOutput> mapFromInput(List<FootballMatchInput> input){
-        return input.stream().map(FootballMatchMapper::mapFromInput).collect(Collectors.toList());
+        return input.stream().map(MatchInputOutputMapper::mapFromInput).collect(Collectors.toList());
     }
 }

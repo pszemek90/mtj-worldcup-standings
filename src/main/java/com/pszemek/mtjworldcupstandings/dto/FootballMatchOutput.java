@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Getter
 public class FootballMatchOutput {
@@ -73,5 +74,24 @@ public class FootballMatchOutput {
                 ", homeTeam='" + homeTeam + '\'' +
                 ", date=" + date +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FootballMatchOutput that = (FootballMatchOutput) o;
+        return Objects.equals(id, that.id)
+                && Objects.equals(awayScore, that.awayScore)
+                && Objects.equals(homeScore, that.homeScore)
+                && Objects.equals(awayTeam, that.awayTeam)
+                && Objects.equals(homeTeam, that.homeTeam)
+                && Objects.equals(date, that.date)
+                && Objects.equals(finished, that.finished);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, awayScore, homeScore, awayTeam, homeTeam, date, finished);
     }
 }
