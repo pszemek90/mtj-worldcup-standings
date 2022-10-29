@@ -1,7 +1,9 @@
 package com.pszemek.mtjworldcupstandings.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pszemek.mtjworldcupstandings.configuration.CurrentBearerToken;
 import com.pszemek.mtjworldcupstandings.dto.*;
+import com.pszemek.mtjworldcupstandings.entity.MatchTyping;
 import com.pszemek.mtjworldcupstandings.mapper.MatchInputOutputMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +14,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,25 +29,36 @@ public class UpdateResults {
     @Value("${api.login.url}")
     private String loginUrl;
 
+    @Value("${fallback.json.path}")
+    private String fallbackJsonPath;
+
     private final RestTemplate restTemplate;
     private final ApiLoginRequest apiLoginRequest;
     private final MatchesService matchesService;
+    private final TypingsService typingsService;
 
-    public UpdateResults(RestTemplate restTemplate, ApiLoginRequest apiLoginRequest, MatchesService matchesService) {
+    public UpdateResults(RestTemplate restTemplate, ApiLoginRequest apiLoginRequest, MatchesService matchesService, TypingsService typingsService) {
         this.restTemplate = restTemplate;
         this.apiLoginRequest = apiLoginRequest;
         this.matchesService = matchesService;
+        this.typingsService = typingsService;
     }
 
-    @Scheduled(cron = "0 15 0 * * *")
+    @Scheduled(cron = "0 35 13 * * *")
     private void getCurrentMatches() {
         getBearerToken();
-        List<FootballMatchOutput> matchesFromApi = getMatches();
+//        List<FootballMatchOutput> matchesFromApi = getMatches();
+        //todo for testing purposes
+        List<FootballMatchOutput> matchesFromApi = getMatchesFromPlainJson();
         List<FootballMatchOutput> matchesFromDb = matchesService.getAllMatches();
-        if(matchesFromDb.isEmpty())
+        //todo maybe get rid of this? one-timer
+        if(matchesFromDb.isEmpty()) {
             matchesService.saveAllMatches(matchesFromApi);
-        else
+        }
+        else {
             compareAndUpdateMatches(matchesFromApi, matchesFromDb);
+            updateTypings();
+        }
     }
 
     private void compareAndUpdateMatches(List<FootballMatchOutput> matchesFromApi, List<FootballMatchOutput> matchesFromDb) {
@@ -62,6 +76,35 @@ public class UpdateResults {
             matchesService.saveAllMatches(matchesToAddOrUpdate);
         } else
             logger.info("No matches to update or add");
+    }
+
+    private void updateTypings() {
+        List<FootballMatchOutput> matchesFromDb = matchesService.getAllMatches();
+        List<FootballMatchOutput> finishedMatches = matchesFromDb.stream()
+                .filter(FootballMatchOutput::getFinished)
+                .collect(Collectors.toList());
+        List<MatchTyping> allTypings = typingsService.getAllTypingEntities();
+        for(FootballMatchOutput finishedMatch : finishedMatches) {
+            List<MatchTyping> typingsForCheck = allTypings.stream()
+                    .filter(typing -> typing.getMatchId().equals(finishedMatch.getId()))
+                    .collect(Collectors.toList());
+            markTypingsForWin(typingsForCheck, finishedMatch);
+        }
+        typingsService.saveAll(allTypings);
+    }
+
+    private void markTypingsForWin(List<MatchTyping> typingsForCheck, FootballMatchOutput finishedMatch) {
+        Integer matchHomeScore = finishedMatch.getHomeScore();
+        Integer matchAwayScore = finishedMatch.getAwayScore();
+        for(MatchTyping typing : typingsForCheck) {
+            Integer typingHomeScore = typing.getHomeScore();
+            Integer typingAwayScore = typing.getAwayScore();
+            if(typingHomeScore.equals(matchHomeScore) && typingAwayScore.equals(matchAwayScore)) {
+                typing.setCorrect(Boolean.TRUE);
+            } else {
+                typing.setCorrect(Boolean.FALSE);
+            }
+        }
     }
 
     private List<FootballMatchOutput> getMatches() {
@@ -103,7 +146,17 @@ public class UpdateResults {
         }
     }
 
-    private void markFinishedMatches() {
-
+    private List<FootballMatchOutput> getMatchesFromPlainJson() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            MatchesInputResponse plainJsonResponse = objectMapper.readValue(new File(fallbackJsonPath), MatchesInputResponse.class);
+            List<FootballMatchInput> matchInputs = plainJsonResponse.getMatches();
+            if(matchInputs != null){
+                return MatchInputOutputMapper.mapFromInput(matchInputs);
+            }
+        } catch (IOException e) {
+            logger.error("Couldn't read from plain JSON. Reason: {}", e.getMessage());
+        }
+        return List.of();
     }
 }
