@@ -36,7 +36,7 @@ public class UpdateResults {
         this.matchesService = matchesService;
     }
 
-    @Scheduled(cron = "0 57 22 * * *")
+    @Scheduled(cron = "0 15 0 * * *")
     private void getCurrentMatches() {
         getBearerToken();
         List<FootballMatchOutput> matchesFromApi = getMatches();
