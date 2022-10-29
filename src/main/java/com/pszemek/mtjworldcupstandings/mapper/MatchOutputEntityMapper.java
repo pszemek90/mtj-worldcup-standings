@@ -15,7 +15,8 @@ public class MatchOutputEntityMapper {
                 .setHomeScore(output.getHomeScore())
                 .setHomeTeam(output.getHomeTeam())
                 .setDate(output.getDate())
-                .setFinished(output.isFinished());
+                .setFinished(output.isFinished())
+                .setPool(output.getPool());
     }
 
     public static FootballMatchOutput mapFromEntity(Match entity) {
@@ -26,7 +27,8 @@ public class MatchOutputEntityMapper {
                 .setHomeScore(entity.getHomeScore())
                 .setHomeTeam(entity.getHomeTeam())
                 .setDate(entity.getDate())
-                .setFinished(entity.getFinished());
+                .setFinished(entity.getFinished())
+                .setPool(entity.getPool());
     }
 
     public static List<Match> mapFromOutput(List<FootballMatchOutput> output){

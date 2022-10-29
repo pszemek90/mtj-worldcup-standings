@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import javax.persistence.PersistenceException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -80,7 +81,20 @@ public class MatchesService {
                 typing.setStatus(TypingResultEnum.UNKNOWN);
                 matchTypingRepository.save(typing);
                 lowerBalance(userId);
+                raisePoolByOne(match);
             }
+        }
+    }
+
+    private void raisePoolByOne(FootballMatchOutput match) {
+        Optional<Match> matchEntityOptional = matchRepository.findByMatchId(match.getId());
+        if(matchEntityOptional.isPresent()) {
+            Match matchEntity = matchEntityOptional.get();
+            matchEntity.setPool(matchEntity.getPool().add(BigDecimal.ONE));
+            matchRepository.save(matchEntity);
+        } else {
+            logger.error("Couldn't found a match with id: {}", match.getId());
+            throw new PersistenceException("Couldn't found a match with id: " + match.getId());
         }
     }
 

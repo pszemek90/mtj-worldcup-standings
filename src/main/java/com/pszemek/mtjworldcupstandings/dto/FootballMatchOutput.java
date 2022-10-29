@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.pszemek.mtjworldcupstandings.enums.TypingResultEnum;
 import lombok.Getter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -26,6 +27,8 @@ public class FootballMatchOutput {
     private Boolean finished;
     @JsonProperty("status")
     private TypingResultEnum status;
+    @JsonProperty("pool")
+    private BigDecimal pool;
 
     public FootballMatchOutput setId(Integer id) {
         this.id = id;
@@ -63,6 +66,11 @@ public class FootballMatchOutput {
 
     public FootballMatchOutput setStatus(TypingResultEnum status) {
         this.status = status;
+        return this;
+    }
+
+    public FootballMatchOutput setPool(BigDecimal pool) {
+        this.pool = pool;
         return this;
     }
 

@@ -3,6 +3,7 @@ package com.pszemek.mtjworldcupstandings.entity;
 import lombok.Getter;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity(name = "match")
@@ -26,6 +27,8 @@ public class Match {
     private LocalDateTime date;
     @Column(name = "finished")
     private Boolean finished;
+    @Column(name = "pool", columnDefinition = "numeric(7, 2) default 0")
+    private BigDecimal pool;
 
     public Match setMatchId(Integer matchId) {
         this.matchId = matchId;
@@ -59,6 +62,11 @@ public class Match {
 
     public Match setFinished(Boolean finished) {
         this.finished = finished;
+        return this;
+    }
+
+    public Match setPool(BigDecimal pool) {
+        this.pool = pool;
         return this;
     }
 }
