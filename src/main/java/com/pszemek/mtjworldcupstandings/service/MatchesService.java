@@ -4,15 +4,19 @@ import com.pszemek.mtjworldcupstandings.dto.FootballMatchOutput;
 import com.pszemek.mtjworldcupstandings.dto.Typings;
 import com.pszemek.mtjworldcupstandings.entity.Match;
 import com.pszemek.mtjworldcupstandings.entity.MatchTyping;
+import com.pszemek.mtjworldcupstandings.entity.User;
 import com.pszemek.mtjworldcupstandings.enums.TypingResultEnum;
 import com.pszemek.mtjworldcupstandings.mapper.MatchOutputEntityMapper;
 import com.pszemek.mtjworldcupstandings.mapper.MatchTypingFootballMatchOutputMapper;
 import com.pszemek.mtjworldcupstandings.repository.MatchRepository;
 import com.pszemek.mtjworldcupstandings.repository.MatchTypingRepository;
+import com.pszemek.mtjworldcupstandings.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -27,10 +31,12 @@ public class MatchesService {
 
     private final MatchTypingRepository matchTypingRepository;
     private final MatchRepository matchRepository;
+    private final UserRepository userRepository;
 
-    public MatchesService(MatchTypingRepository matchTypingRepository, MatchRepository matchRepository) {
+    public MatchesService(MatchTypingRepository matchTypingRepository, MatchRepository matchRepository, UserRepository userRepository) {
         this.matchTypingRepository = matchTypingRepository;
         this.matchRepository = matchRepository;
+        this.userRepository = userRepository;
     }
 
     public List<FootballMatchOutput> getMatchesForToday(String stringDate) {
@@ -73,7 +79,20 @@ public class MatchesService {
                 typing.setUserId(userId);
                 typing.setStatus(TypingResultEnum.UNKNOWN);
                 matchTypingRepository.save(typing);
+                lowerBalance(userId);
             }
+        }
+    }
+
+    private void lowerBalance(Long userId) {
+        Optional<User> userOptional = userRepository.findById(userId);
+        if(userOptional.isPresent()) {
+            User user = userOptional.get();
+            user.setBalance(user.getBalance().subtract(BigDecimal.ONE));
+            userRepository.save(user);
+        } else {
+            logger.error("Username with id: {} not found", userId);
+            throw new UsernameNotFoundException("Couldn't found username with id: " + userId);
         }
     }
 

@@ -19,4 +19,9 @@ public class User {
     private String email;
     @Column(name = "balance")
     private BigDecimal balance;
+
+    public User setBalance(BigDecimal balance) {
+        this.balance = balance;
+        return this;
+    }
 }
