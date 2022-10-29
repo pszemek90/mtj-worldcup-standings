@@ -6,6 +6,7 @@ import com.pszemek.mtjworldcupstandings.entity.Match;
 import com.pszemek.mtjworldcupstandings.entity.MatchTyping;
 import com.pszemek.mtjworldcupstandings.enums.TypingResultEnum;
 import com.pszemek.mtjworldcupstandings.mapper.MatchOutputEntityMapper;
+import com.pszemek.mtjworldcupstandings.mapper.MatchTypingFootballMatchOutputMapper;
 import com.pszemek.mtjworldcupstandings.repository.MatchRepository;
 import com.pszemek.mtjworldcupstandings.repository.MatchTypingRepository;
 import org.slf4j.Logger;
@@ -68,15 +69,9 @@ public class MatchesService {
                         .setHomeScore(match.getHomeScore());
                 matchTypingRepository.save(matchToUpdate);
             } else {
-                MatchTyping typing = new MatchTyping()
-                        .setUserId(userId)
-                        .setAwayScore(match.getAwayScore())
-                        .setAwayTeam(match.getAwayTeam())
-                        .setHomeScore(match.getHomeScore())
-                        .setHomeTeam(match.getHomeTeam())
-                        .setMatchId(match.getId())
-                        .setMatchDate(match.getDate().toLocalDate())
-                        .setStatus(TypingResultEnum.UNKNOWN);
+                MatchTyping typing = MatchTypingFootballMatchOutputMapper.mapToEntity(match);
+                typing.setUserId(userId);
+                typing.setStatus(TypingResultEnum.UNKNOWN);
                 matchTypingRepository.save(typing);
             }
         }
