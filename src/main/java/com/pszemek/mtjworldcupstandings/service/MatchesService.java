@@ -1,24 +1,16 @@
 package com.pszemek.mtjworldcupstandings.service;
 
-import com.pszemek.mtjworldcupstandings.configuration.CurrentBearerToken;
-import com.pszemek.mtjworldcupstandings.dto.ApiLoginRequest;
-import com.pszemek.mtjworldcupstandings.dto.BearerTokenDto;
 import com.pszemek.mtjworldcupstandings.dto.FootballMatchOutput;
 import com.pszemek.mtjworldcupstandings.dto.Typings;
 import com.pszemek.mtjworldcupstandings.entity.Match;
 import com.pszemek.mtjworldcupstandings.entity.MatchTyping;
+import com.pszemek.mtjworldcupstandings.enums.TypingResultEnum;
 import com.pszemek.mtjworldcupstandings.mapper.MatchOutputEntityMapper;
 import com.pszemek.mtjworldcupstandings.repository.MatchRepository;
 import com.pszemek.mtjworldcupstandings.repository.MatchTypingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -83,7 +75,8 @@ public class MatchesService {
                         .setHomeScore(match.getHomeScore())
                         .setHomeTeam(match.getHomeTeam())
                         .setMatchId(match.getId())
-                        .setMatchDate(match.getDate().toLocalDate());
+                        .setMatchDate(match.getDate().toLocalDate())
+                        .setStatus(TypingResultEnum.UNKNOWN);
                 matchTypingRepository.save(typing);
             }
         }

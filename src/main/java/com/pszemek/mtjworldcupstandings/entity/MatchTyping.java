@@ -1,5 +1,6 @@
 package com.pszemek.mtjworldcupstandings.entity;
 
+import com.pszemek.mtjworldcupstandings.enums.TypingResultEnum;
 import lombok.Getter;
 
 import javax.persistence.*;
@@ -25,8 +26,9 @@ public class MatchTyping {
     private Integer matchId;
     @Column(name = "user_id")
     private Long userId;
-    @Column(name = "is_correct")
-    private Boolean isCorrect;
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
+    private TypingResultEnum status;
     @Column(name = "match_date")
     private LocalDate matchDate;
 
@@ -60,8 +62,8 @@ public class MatchTyping {
         return this;
     }
 
-    public MatchTyping setCorrect(Boolean correct) {
-        isCorrect = correct;
+    public MatchTyping setStatus(TypingResultEnum status) {
+        this.status = status;
         return this;
     }
 

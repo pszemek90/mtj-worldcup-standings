@@ -17,7 +17,7 @@ public class MatchTypingFootballMatchOutputMapper {
                 .setAwayTeam(entity.getAwayTeam())
                 .setHomeTeam(entity.getHomeTeam())
                 .setDate(LocalDateTime.of(entity.getMatchDate(), LocalTime.of(8, 0)) )
-                .setCorrect(entity.getIsCorrect());
+                .setStatus(entity.getStatus());
     }
 
     public static List<FootballMatchOutput> mapToFootballMatchOutput(List<MatchTyping> entities) {

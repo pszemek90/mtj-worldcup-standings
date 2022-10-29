@@ -1,6 +1,7 @@
 package com.pszemek.mtjworldcupstandings.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.pszemek.mtjworldcupstandings.enums.TypingResultEnum;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
@@ -23,8 +24,8 @@ public class FootballMatchOutput {
     private LocalDateTime date;
     @JsonProperty("finished")
     private Boolean finished;
-    @JsonProperty("correct")
-    private Boolean correct;
+    @JsonProperty("status")
+    private TypingResultEnum status;
 
     public FootballMatchOutput setId(Integer id) {
         this.id = id;
@@ -60,8 +61,8 @@ public class FootballMatchOutput {
         return this.finished;
     }
 
-    public FootballMatchOutput setCorrect(Boolean correct) {
-        this.correct = correct;
+    public FootballMatchOutput setStatus(TypingResultEnum status) {
+        this.status = status;
         return this;
     }
 
