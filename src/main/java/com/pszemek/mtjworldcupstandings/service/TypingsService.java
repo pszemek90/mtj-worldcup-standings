@@ -7,9 +7,7 @@ import com.pszemek.mtjworldcupstandings.repository.MatchTypingRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,7 +22,7 @@ public class TypingsService {
         List<MatchTyping> userTypings = typingRepository.findByUserId(userId);
         List<FootballMatchOutput> typingsOutput = MatchTypingFootballMatchOutputMapper.mapToFootballMatchOutput(userTypings);
         Map<LocalDateTime, List<FootballMatchOutput>> userTypingsMap = typingsOutput.stream().collect(Collectors.groupingBy(FootballMatchOutput::getDate));
-        var userTypingsWithStringDateMap = new HashMap<String, List<FootballMatchOutput>>();
+        var userTypingsWithStringDateMap = new TreeMap<String, List<FootballMatchOutput>>(Comparator.reverseOrder());
         userTypingsMap.forEach((k, v) -> userTypingsWithStringDateMap.put(k.toLocalDate().toString(), v));
         return userTypingsWithStringDateMap;
     }

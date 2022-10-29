@@ -23,6 +23,8 @@ public class FootballMatchOutput {
     private LocalDateTime date;
     @JsonProperty("finished")
     private Boolean finished;
+    @JsonProperty("correct")
+    private Boolean correct;
 
     public FootballMatchOutput setId(Integer id) {
         this.id = id;
@@ -56,6 +58,11 @@ public class FootballMatchOutput {
 
     public Boolean isFinished() {
         return this.finished;
+    }
+
+    public FootballMatchOutput setCorrect(Boolean correct) {
+        this.correct = correct;
+        return this;
     }
 
     //todo for test purposes, probably to delete
