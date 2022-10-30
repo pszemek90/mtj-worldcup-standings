@@ -33,4 +33,14 @@ public class UserService {
             throw new UsernameNotFoundException("Couldn't found user with Id: " + userId);
         }
     }
+
+    public User getByUserId(Long userId) {
+        Optional<User> userOptional = userRepository.findById(userId);
+        if(userOptional.isPresent()) {
+            return userOptional.get();
+        } else {
+            logger.error("Couldn't find user with id: {} in database", userId);
+            throw new UsernameNotFoundException("Couldn't find user in database");
+        }
+    }
 }
