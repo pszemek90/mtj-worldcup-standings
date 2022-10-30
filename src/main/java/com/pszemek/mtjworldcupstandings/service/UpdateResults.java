@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pszemek.mtjworldcupstandings.configuration.CurrentBearerToken;
 import com.pszemek.mtjworldcupstandings.dto.*;
 import com.pszemek.mtjworldcupstandings.entity.MatchTyping;
+import com.pszemek.mtjworldcupstandings.enums.TypingResultEnum;
 import com.pszemek.mtjworldcupstandings.mapper.MatchInputOutputMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,9 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,15 +40,20 @@ public class UpdateResults {
     private final ApiLoginRequest apiLoginRequest;
     private final MatchesService matchesService;
     private final TypingsService typingsService;
+    private final UserService userService;
+    private final OverallPoolService overallPoolService;
 
-    public UpdateResults(RestTemplate restTemplate, ApiLoginRequest apiLoginRequest, MatchesService matchesService, TypingsService typingsService) {
+    public UpdateResults(RestTemplate restTemplate, ApiLoginRequest apiLoginRequest, MatchesService matchesService, TypingsService typingsService, UserService userService, OverallPoolService overallPoolService) {
         this.restTemplate = restTemplate;
         this.apiLoginRequest = apiLoginRequest;
         this.matchesService = matchesService;
         this.typingsService = typingsService;
+        this.userService = userService;
+        this.overallPoolService = overallPoolService;
     }
 
-    @Scheduled(cron = "0 35 13 * * *")
+    //todo change cron before prod
+    @Scheduled(cron = "0 15 0 * * *")
     private void getCurrentMatches() {
         getBearerToken();
 //        List<FootballMatchOutput> matchesFromApi = getMatches();
@@ -56,12 +65,16 @@ public class UpdateResults {
             matchesService.saveAllMatches(matchesFromApi);
         }
         else {
-            compareAndUpdateMatches(matchesFromApi, matchesFromDb);
-            updateTypings();
+            List<FootballMatchOutput> matchesToUpdate = compareAndUpdateMatches(matchesFromApi, matchesFromDb);
+            if(!matchesToUpdate.isEmpty()) {
+                updateTypings();
+            } else {
+                logger.info("No typings update today");
+            }
         }
     }
 
-    private void compareAndUpdateMatches(List<FootballMatchOutput> matchesFromApi, List<FootballMatchOutput> matchesFromDb) {
+    private List<FootballMatchOutput> compareAndUpdateMatches(List<FootballMatchOutput> matchesFromApi, List<FootballMatchOutput> matchesFromDb) {
         List<FootballMatchOutput> matchesToAddOrUpdate =
                 matchesFromApi.stream()
                         .filter(match -> !matchesFromDb.contains(match))
@@ -70,41 +83,82 @@ public class UpdateResults {
         if(!matchesToAddOrUpdate.isEmpty()) {
             logger.info("Adding or updating matches:");
             matchesToAddOrUpdate.forEach(match -> logger.info(
-                    "{} {} - {} {}, state: {}",
+                    "{} {} - {} {}, finished: {}",
                     match.getHomeTeam(), match.getHomeScore(), match.getAwayScore(), match.getAwayTeam(),
                     match.isFinished()));
             matchesService.saveAllMatches(matchesToAddOrUpdate);
-        } else
+        } else {
             logger.info("No matches to update or add");
+        }
+        return matchesToAddOrUpdate;
     }
 
     private void updateTypings() {
+        logger.info("Updating typings");
         List<FootballMatchOutput> matchesFromDb = matchesService.getAllMatches();
-        List<FootballMatchOutput> finishedMatches = matchesFromDb.stream()
+        List<FootballMatchOutput> recentlyFinishedMatches = matchesFromDb.stream()
                 .filter(FootballMatchOutput::getFinished)
+                .filter(match -> match.getPool().compareTo(BigDecimal.ZERO) > 0)
                 .collect(Collectors.toList());
-        List<MatchTyping> allTypings = typingsService.getAllTypingEntities();
-        for(FootballMatchOutput finishedMatch : finishedMatches) {
-            List<MatchTyping> typingsForCheck = allTypings.stream()
-                    .filter(typing -> typing.getMatchId().equals(finishedMatch.getId()))
-                    .collect(Collectors.toList());
-            markTypingsForWin(typingsForCheck, finishedMatch);
+        logger.info("Recently finished matches: {}", recentlyFinishedMatches);
+        List<MatchTyping> allTypings = typingsService.getAllTypingEntities()
+                .stream().filter(typing -> typing.getStatus() == TypingResultEnum.UNKNOWN)
+                .collect(Collectors.toList());
+        BigDecimal todaysPool = overallPoolService.getOverallPool().getAmount();
+        logger.info("Todays overall pool: {}", todaysPool);
+        if(!recentlyFinishedMatches.isEmpty()) {
+            BigDecimal poolShareForMatch = todaysPool.divide(BigDecimal.valueOf(recentlyFinishedMatches.size()), 2, RoundingMode.HALF_UP);
+            logger.info("Todays pool share for one match: {}. Number of matches: {}", poolShareForMatch, recentlyFinishedMatches.size());
+            for(FootballMatchOutput finishedMatch : recentlyFinishedMatches) {
+                List<MatchTyping> typingsForCheck = allTypings.stream()
+                        .filter(typing -> typing.getMatchId().equals(finishedMatch.getId()))
+                        .collect(Collectors.toList());
+                List<Long> winners = checkWinners(typingsForCheck, finishedMatch);
+                splitPool(winners, finishedMatch, poolShareForMatch);
+            }
+            typingsService.saveAll(allTypings);
         }
-        typingsService.saveAll(allTypings);
+        BigDecimal nextDayPool = overallPoolService.getOverallPool().getAmount();
+        logger.info("Overall pool for next day: {}", nextDayPool);
     }
 
-    private void markTypingsForWin(List<MatchTyping> typingsForCheck, FootballMatchOutput finishedMatch) {
+    private void splitPool(List<Long> winners, FootballMatchOutput finishedMatch, BigDecimal poolShare) {
+        BigDecimal poolFromMatch = finishedMatch.getPool();
+        if(!winners.isEmpty()) {
+            logger.info("Splitting pool for match: {} - {}", finishedMatch.getHomeTeam(), finishedMatch.getAwayTeam());
+            BigDecimal splitFromMatch = poolFromMatch.divide(BigDecimal.valueOf(winners.size()), 2, RoundingMode.HALF_UP);
+            BigDecimal splitFromPoolShare = poolShare.divide(BigDecimal.valueOf(winners.size()), 2, RoundingMode.HALF_UP);
+            BigDecimal split = splitFromMatch.add(splitFromPoolShare);
+            for(Long userId : winners) {
+                userService.addWinningAmount(userId, split);
+            }
+        } else {
+            logger.info("No winners for match: {} - {}", finishedMatch.getHomeTeam(), finishedMatch.getAwayTeam());
+            BigDecimal pool = poolFromMatch.add(poolShare);
+            overallPoolService.riseOverallPool(pool);
+        }
+        matchesService.clearMatchPool(finishedMatch);
+    }
+
+    private List<Long> checkWinners(List<MatchTyping> typingsForCheck, FootballMatchOutput finishedMatch) {
         Integer matchHomeScore = finishedMatch.getHomeScore();
         Integer matchAwayScore = finishedMatch.getAwayScore();
+        List<Long> winners = new ArrayList<>();
         for(MatchTyping typing : typingsForCheck) {
             Integer typingHomeScore = typing.getHomeScore();
             Integer typingAwayScore = typing.getAwayScore();
             if(typingHomeScore.equals(matchHomeScore) && typingAwayScore.equals(matchAwayScore)) {
-                typing.setCorrect(Boolean.TRUE);
+                logger.info("Winner typing for user: {}, for match: {} - {}",
+                        typing.getUserId(), finishedMatch.getHomeTeam(), finishedMatch.getAwayTeam());
+                typing.setStatus(TypingResultEnum.CORRECT);
+                winners.add(typing.getUserId());
             } else {
-                typing.setCorrect(Boolean.FALSE);
+                typing.setStatus(TypingResultEnum.INCORRECT);
             }
         }
+        logger.info("Overall winners for match: {} - {}: {}", finishedMatch.getHomeTeam(), finishedMatch.getAwayTeam(),
+                winners.size());
+        return winners;
     }
 
     private List<FootballMatchOutput> getMatches() {

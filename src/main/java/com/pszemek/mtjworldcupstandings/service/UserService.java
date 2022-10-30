@@ -22,6 +22,7 @@ public class UserService {
     }
 
     public void addWinningAmount(Long userId, BigDecimal amount) {
+        logger.info("Adding balance of: {} for user: {}", amount, userId);
         Optional<User> userOptional = userRepository.findById(userId);
         if(userOptional.isPresent()) {
             User user = userOptional.get();

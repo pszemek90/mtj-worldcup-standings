@@ -129,4 +129,17 @@ public class MatchesService {
                 .setAwayScore(newMatch.getAwayScore())
                 .setFinished(newMatch.getFinished());
     }
+
+    public void clearMatchPool(FootballMatchOutput finishedMatch) {
+        Optional<Match> matchEntityOptional = matchRepository.findByMatchId(finishedMatch.getId());
+        if(matchEntityOptional.isPresent()) {
+            logger.info("Clearing pool for match: {} - {}", finishedMatch.getHomeTeam(), finishedMatch.getAwayTeam());
+            Match match = matchEntityOptional.get();
+            match.setPool(BigDecimal.ZERO);
+            matchRepository.save(match);
+        } else {
+            logger.error("Couldn't find match with id: {} in database", finishedMatch.getId());
+            throw new IllegalStateException("Couldn't find match in database!");
+        }
+    }
 }
