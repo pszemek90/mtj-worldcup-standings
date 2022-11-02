@@ -62,7 +62,7 @@ public class MatchesService {
     public List<FootballMatchOutput> getAllMatches() {
         List<Match> matchesFromDb = matchRepository.findAll();
         return MatchOutputEntityMapper.mapFromEntity(matchesFromDb);
-        }
+    }
 
     public void saveTypings(Typings typings) {
         List<FootballMatchOutput> matches = typings.getMatches();

@@ -6,6 +6,7 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Objects;
 
 @Getter
@@ -109,5 +110,9 @@ public class FootballMatchOutput {
     @Override
     public int hashCode() {
         return Objects.hash(id, awayScore, homeScore, awayTeam, homeTeam, date, finished);
+    }
+
+    public FootballMatchOutput normalizeMatchTime() {
+        return this.setDate(LocalDateTime.of(this.date.toLocalDate(), LocalTime.of(8, 0)));
     }
 }
