@@ -14,7 +14,8 @@ public class MatchInputOutputMapper {
                 .setHomeScore(input.getHomeScore())
                 .setAwayTeam(input.getAwayTeamEn())
                 .setHomeTeam(input.getHomeTeamEn())
-                .setDate(input.getDate())
+                //adjusting to Poland time(CET) from time fetched from api
+                .setDate(input.getDate().minusHours(2L))
                 .setFinished(input.getFinished());
     }
 

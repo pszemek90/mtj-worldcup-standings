@@ -47,7 +47,7 @@ public class MatchesService {
                 .filter(match -> match.getDate().toLocalDate().equals(date))
                 .collect(Collectors.toList());
         //todo just for testing in dev, delete before prod move
-        if(date.isEqual(LocalDate.now())) {
+        /*if(date.isEqual(LocalDate.now())) {
             todaysMatches.add(new FootballMatchOutput()
                     .setDate(LocalDateTime.of(LocalDate.now(), LocalTime.of(20, 0)))
                     .setId(999)
@@ -55,7 +55,7 @@ public class MatchesService {
                     .setHomeScore(0)
                     .setAwayTeam("testTeam1")
                     .setHomeTeam("testTeam2"));
-        }
+        }*/
         return todaysMatches;
     }
 
