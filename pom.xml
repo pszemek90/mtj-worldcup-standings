@@ -87,6 +87,7 @@
     </dependencies>
 
     <build>
+        <finalName>mtj-worldcup-standings-server</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
