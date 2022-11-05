@@ -8,7 +8,7 @@ import java.time.LocalDate;
 
 
 @Getter
-@Entity(name = "match_typing")
+@Entity(name = "match_typings")
 public class MatchTyping {
 
     @Id
