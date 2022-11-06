@@ -71,11 +71,13 @@ public class MatchesService {
         for(FootballMatchOutput match : matches) {
             Optional<MatchTyping> matchAlreadyTyped = matchTypingRepository.findByUserIdAndMatchId(userId, match.getId());
             if(matchAlreadyTyped.isPresent()){
+                logger.info("Match {} - {} was already typed", match.getHomeTeam(), match.getAwayTeam());
                 MatchTyping matchToUpdate = matchAlreadyTyped.get()
                         .setAwayScore(match.getAwayScore())
                         .setHomeScore(match.getHomeScore());
                 matchTypingRepository.save(matchToUpdate);
             } else {
+                logger.info("Match {} - {} is typed for the first time", match.getHomeTeam(), match.getAwayTeam());
                 MatchTyping typing = MatchTypingFootballMatchOutputMapper.mapToEntity(match);
                 typing.setUserId(userId);
                 typing.setStatus(TypingResultEnum.UNKNOWN);
@@ -101,6 +103,7 @@ public class MatchesService {
     private void lowerBalance(Long userId) {
         Optional<User> userOptional = userRepository.findById(userId);
         if(userOptional.isPresent()) {
+            logger.info("Lowering balance for userId: {}", userId);
             User user = userOptional.get();
             user.setBalance(user.getBalance().subtract(BigDecimal.ONE));
             userRepository.save(user);

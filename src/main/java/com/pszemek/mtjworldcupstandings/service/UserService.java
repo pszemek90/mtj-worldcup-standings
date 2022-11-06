@@ -1,5 +1,6 @@
 package com.pszemek.mtjworldcupstandings.service;
 
+import com.pszemek.mtjworldcupstandings.dto.UserDto;
 import com.pszemek.mtjworldcupstandings.entity.User;
 import com.pszemek.mtjworldcupstandings.repository.UserRepository;
 import org.slf4j.Logger;
@@ -42,5 +43,22 @@ public class UserService {
             logger.error("Couldn't find user with id: {} in database", userId);
             throw new UsernameNotFoundException("Couldn't find user in database");
         }
+    }
+
+    public BigDecimal getUserBalanceById(Long userId) {
+        User user = getByUserId(userId);
+        return user.getBalance();
+    }
+
+    public void setUsersCountry(UserDto userDto) {
+        logger.info("Setting country for user with id: {}", userDto.getId());
+        User user = getByUserId(userDto.getId());
+        user.setCountry(userDto.getCountry());
+        userRepository.save(user);
+    }
+
+    public void saveUser(User user) {
+        logger.info("Saving or updating user with id: {}", user.getId());
+        userRepository.save(user);
     }
 }

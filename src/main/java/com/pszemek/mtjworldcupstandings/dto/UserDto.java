@@ -14,6 +14,7 @@ public class UserDto implements UserDetails {
     private String password;
     private String email;
     private BigDecimal balance;
+    private String country;
 
     public UserDto setId(Long id) {
         this.id = id;
@@ -37,6 +38,11 @@ public class UserDto implements UserDetails {
 
     public UserDto setBalance(BigDecimal balance) {
         this.balance = balance;
+        return this;
+    }
+
+    public UserDto setCountry(String country) {
+        this.country = country;
         return this;
     }
 
