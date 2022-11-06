@@ -47,6 +47,18 @@ public class UserDto implements UserDetails {
     }
 
     @Override
+    public String toString() {
+        return "UserDto{" +
+                "id=" + id +
+                ", username='" + username + '\'' +
+                ", password='" + password + '\'' +
+                ", email='" + email + '\'' +
+                ", balance=" + balance +
+                ", country='" + country + '\'' +
+                '}';
+    }
+
+    @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return null;
     }

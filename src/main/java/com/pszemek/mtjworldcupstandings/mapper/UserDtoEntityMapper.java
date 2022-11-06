@@ -11,6 +11,7 @@ public class UserDtoEntityMapper {
                 .setUsername(entity.getUsername())
                 .setPassword(entity.getPassword())
                 .setEmail(entity.getEmail())
-                .setBalance(entity.getBalance());
+                .setBalance(entity.getBalance())
+                .setCountry(entity.getCountry());
     }
 }

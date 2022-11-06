@@ -42,11 +42,11 @@ public class AuthController {
         String jwt = jwtUtils.generateJwtToken(authentication);
         boolean isFirstLogin = false;
 
-        if(isFirstLogin/*user.getCountry() == null*/){
+        if(user.getCountry() == null){
             isFirstLogin = true;
             countryAssignmentService.assignRandomCountry(user);
         }
 
-        return ResponseEntity.ok(new JwtResponse(jwt, user.getId(), user.getUsername(), user.getEmail(), user.getBalance(), isFirstLogin));
+        return ResponseEntity.ok(new JwtResponse(jwt, user.getId(), user.getUsername(), user.getEmail(), user.getBalance(), isFirstLogin, user.getCountry()));
     }
 }
