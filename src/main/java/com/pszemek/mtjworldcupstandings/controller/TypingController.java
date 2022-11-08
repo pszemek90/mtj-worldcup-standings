@@ -2,6 +2,7 @@ package com.pszemek.mtjworldcupstandings.controller;
 
 import com.pszemek.mtjworldcupstandings.dto.FootballMatchOutput;
 import com.pszemek.mtjworldcupstandings.dto.TyperScore;
+import com.pszemek.mtjworldcupstandings.dto.TypingOutput;
 import com.pszemek.mtjworldcupstandings.service.TypingsService;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,7 +24,7 @@ public class TypingController {
     }
 
     @GetMapping()
-    public Map<String, List<FootballMatchOutput>> getTypingsForUser(Long userId) {
+    public Map<String, List<TypingOutput>> getTypingsForUser(Long userId) {
         return typingsService.getTypingsForUser(userId);
     }
 

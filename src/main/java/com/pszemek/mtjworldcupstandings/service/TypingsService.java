@@ -2,6 +2,7 @@ package com.pszemek.mtjworldcupstandings.service;
 
 import com.pszemek.mtjworldcupstandings.dto.FootballMatchOutput;
 import com.pszemek.mtjworldcupstandings.dto.TyperScore;
+import com.pszemek.mtjworldcupstandings.dto.TypingOutput;
 import com.pszemek.mtjworldcupstandings.entity.MatchTyping;
 import com.pszemek.mtjworldcupstandings.entity.User;
 import com.pszemek.mtjworldcupstandings.enums.TypingResultEnum;
@@ -23,13 +24,26 @@ public class TypingsService {
         this.userService = userService;
     }
 
-    public Map<String, List<FootballMatchOutput>> getTypingsForUser(Long userId) {
+    public Map<String, List<TypingOutput>> getTypingsForUser(Long userId) {
         List<MatchTyping> userTypings = typingRepository.findByUserId(userId);
         List<FootballMatchOutput> typingsOutput = MatchTypingFootballMatchOutputMapper.mapToFootballMatchOutput(userTypings);
         Map<LocalDateTime, List<FootballMatchOutput>> userTypingsMap = typingsOutput.stream().collect(Collectors.groupingBy(FootballMatchOutput::getDate));
-        var userTypingsWithStringDateMap = new TreeMap<String, List<FootballMatchOutput>>(Comparator.reverseOrder());
-        userTypingsMap.forEach((k, v) -> userTypingsWithStringDateMap.put(k.toLocalDate().toString(), v));
+        var userTypingsWithStringDateMap = new TreeMap<String, List<TypingOutput>>(Comparator.reverseOrder());
+        userTypingsMap.forEach((k, v) -> userTypingsWithStringDateMap.put(k.toLocalDate().toString(), mapToTypingOutput(v)));
         return userTypingsWithStringDateMap;
+    }
+
+    private List<TypingOutput> mapToTypingOutput(List<FootballMatchOutput> matches) {
+        List<TypingOutput> typingOutputs = new ArrayList<>();
+        for (FootballMatchOutput match : matches) {
+            typingOutputs.add(new TypingOutput(
+                    match.getHomeTeam(),
+                    String.format("%d - %d", match.getHomeScore(), match.getAwayScore()),
+                    match.getAwayTeam(),
+                    match.getStatus().toString()
+            ));
+        }
+        return typingOutputs;
     }
 
     public List<FootballMatchOutput> getAllTypings() {
