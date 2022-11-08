@@ -9,7 +9,7 @@ import java.util.List;
 
 @Getter
 @Setter
-public class Typings {
+public class InputTypings {
     @JsonProperty("matches")
     private List<FootballMatchOutput> matches;
     @JsonProperty("userId")

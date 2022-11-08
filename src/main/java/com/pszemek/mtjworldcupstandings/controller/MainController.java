@@ -1,7 +1,7 @@
 package com.pszemek.mtjworldcupstandings.controller;
 
 import com.pszemek.mtjworldcupstandings.dto.FootballMatchOutput;
-import com.pszemek.mtjworldcupstandings.dto.Typings;
+import com.pszemek.mtjworldcupstandings.dto.InputTypings;
 import com.pszemek.mtjworldcupstandings.service.MatchesService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,8 +33,8 @@ public class MainController {
     }
 
     @PostMapping("/typings")
-    public void sendTypings(@RequestBody Typings typings) {
-        logger.info("Saving typings for userId: {}", typings.getUserId());
-        matchesService.saveTypings(typings);
+    public void sendTypings(@RequestBody InputTypings inputTypings) {
+        logger.info("Saving typings for userId: {}", inputTypings.getUserId());
+        matchesService.saveTypings(inputTypings);
     }
 }

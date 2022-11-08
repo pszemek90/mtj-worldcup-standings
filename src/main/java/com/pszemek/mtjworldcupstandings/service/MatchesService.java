@@ -1,7 +1,7 @@
 package com.pszemek.mtjworldcupstandings.service;
 
 import com.pszemek.mtjworldcupstandings.dto.FootballMatchOutput;
-import com.pszemek.mtjworldcupstandings.dto.Typings;
+import com.pszemek.mtjworldcupstandings.dto.InputTypings;
 import com.pszemek.mtjworldcupstandings.entity.Match;
 import com.pszemek.mtjworldcupstandings.entity.MatchTyping;
 import com.pszemek.mtjworldcupstandings.entity.User;
@@ -19,8 +19,6 @@ import org.springframework.stereotype.Service;
 import javax.persistence.PersistenceException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -64,10 +62,10 @@ public class MatchesService {
         return MatchOutputEntityMapper.mapFromEntity(matchesFromDb);
     }
 
-    public void saveTypings(Typings typings) {
-        List<FootballMatchOutput> matches = typings.getMatches();
+    public void saveTypings(InputTypings inputTypings) {
+        List<FootballMatchOutput> matches = inputTypings.getMatches();
         logger.info("Typed matches amount: {}", matches.size());
-        Long userId = typings.getUserId();
+        Long userId = inputTypings.getUserId();
         for(FootballMatchOutput match : matches) {
             Optional<MatchTyping> matchAlreadyTyped = matchTypingRepository.findByUserIdAndMatchId(userId, match.getId());
             if(matchAlreadyTyped.isPresent()){

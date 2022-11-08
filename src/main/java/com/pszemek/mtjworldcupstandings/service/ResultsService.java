@@ -1,15 +1,16 @@
 package com.pszemek.mtjworldcupstandings.service;
 
+import com.pszemek.mtjworldcupstandings.dto.CorrectTypingsOutput;
 import com.pszemek.mtjworldcupstandings.dto.FootballMatchOutput;
+import com.pszemek.mtjworldcupstandings.dto.InputTypings;
+import com.pszemek.mtjworldcupstandings.entity.MatchTyping;
+import com.pszemek.mtjworldcupstandings.enums.TypingResultEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -18,12 +19,14 @@ public class ResultsService {
     private static final Logger logger = LoggerFactory.getLogger(ResultsService.class);
 
     private final MatchesService matchesService;
+    private final TypingsService typingsService;
 
-    public ResultsService(MatchesService matchesService) {
+    public ResultsService(MatchesService matchesService, TypingsService typingsService) {
         this.matchesService = matchesService;
+        this.typingsService = typingsService;
     }
 
-    public Map<String, List<FootballMatchOutput>> getAllResults() {
+    public Map<String, List<CorrectTypingsOutput>> getAllResults() {
         logger.info("Getting all matches results");
         List<FootballMatchOutput> allMatches = matchesService.getAllMatches();
         logger.info("Matches fetched from db: {}", allMatches.size());
@@ -43,9 +46,24 @@ public class ResultsService {
                         .map(FootballMatchOutput::normalizeMatchTime)
                         .collect(Collectors.groupingBy(FootballMatchOutput::getDate));
         logger.info("Finished matches from db: {}", finishedMatchesByDate.size());
-        Map<String, List<FootballMatchOutput>> finishedMatchesByDateString = new TreeMap<>(Comparator.reverseOrder());
-        finishedMatchesByDate.forEach((k, v) -> finishedMatchesByDateString.put(k.toLocalDate().toString(), v));
+        Map<String, List<CorrectTypingsOutput>> finishedMatchesByDateString = new TreeMap<>(Comparator.reverseOrder());
+        List<MatchTyping> correctTypings = typingsService.getAllTypingEntities().stream()
+                .filter(typing -> typing.getStatus() == TypingResultEnum.CORRECT)
+                .collect(Collectors.toList());
+        finishedMatchesByDate.forEach((k, v) -> finishedMatchesByDateString.put(k.toLocalDate().toString(), connectMatchWithTypings(v, correctTypings)));
         logger.info("Finished matches mapped to string: {}", finishedMatchesByDateString.size());
         return finishedMatchesByDateString;
+    }
+
+    private List<CorrectTypingsOutput> connectMatchWithTypings(List<FootballMatchOutput> matches, List<MatchTyping> correctTypings) {
+        List<CorrectTypingsOutput> correctTypingsOutputs = new ArrayList<>();
+        for(FootballMatchOutput match : matches) {
+            int matchedCorrectTypings = (int) correctTypings.stream()
+                    .filter(correctTyping -> correctTyping.getMatchId().equals(match.getId()))
+                    .count();
+            String result = String.format("%d - %d", match.getHomeScore(), match.getAwayScore());
+            correctTypingsOutputs.add(new CorrectTypingsOutput(match.getHomeTeam(), result, match.getAwayTeam(), matchedCorrectTypings));
+        }
+        return correctTypingsOutputs;
     }
 }
