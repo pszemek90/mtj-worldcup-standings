@@ -1,8 +1,7 @@
 package com.pszemek.mtjworldcupstandings.service;
 
-import com.pszemek.mtjworldcupstandings.dto.CorrectTypingsOutput;
+import com.pszemek.mtjworldcupstandings.dto.CorrectTypingOutput;
 import com.pszemek.mtjworldcupstandings.dto.FootballMatchOutput;
-import com.pszemek.mtjworldcupstandings.dto.InputTypings;
 import com.pszemek.mtjworldcupstandings.entity.MatchTyping;
 import com.pszemek.mtjworldcupstandings.enums.TypingResultEnum;
 import org.slf4j.Logger;
@@ -26,7 +25,7 @@ public class ResultsService {
         this.typingsService = typingsService;
     }
 
-    public Map<String, List<CorrectTypingsOutput>> getAllResults() {
+    public Map<String, List<CorrectTypingOutput>> getAllResults() {
         logger.info("Getting all matches results");
         List<FootballMatchOutput> allMatches = matchesService.getAllMatches();
         logger.info("Matches fetched from db: {}", allMatches.size());
@@ -46,7 +45,7 @@ public class ResultsService {
                         .map(FootballMatchOutput::normalizeMatchTime)
                         .collect(Collectors.groupingBy(FootballMatchOutput::getDate));
         logger.info("Finished matches from db: {}", finishedMatchesByDate.size());
-        Map<String, List<CorrectTypingsOutput>> finishedMatchesByDateString = new TreeMap<>(Comparator.reverseOrder());
+        Map<String, List<CorrectTypingOutput>> finishedMatchesByDateString = new TreeMap<>(Comparator.reverseOrder());
         List<MatchTyping> correctTypings = typingsService.getAllTypingEntities().stream()
                 .filter(typing -> typing.getStatus() == TypingResultEnum.CORRECT)
                 .collect(Collectors.toList());
@@ -55,15 +54,15 @@ public class ResultsService {
         return finishedMatchesByDateString;
     }
 
-    private List<CorrectTypingsOutput> connectMatchWithTypings(List<FootballMatchOutput> matches, List<MatchTyping> correctTypings) {
-        List<CorrectTypingsOutput> correctTypingsOutputs = new ArrayList<>();
+    private List<CorrectTypingOutput> connectMatchWithTypings(List<FootballMatchOutput> matches, List<MatchTyping> correctTypings) {
+        List<CorrectTypingOutput> correctTypingOutputs = new ArrayList<>();
         for(FootballMatchOutput match : matches) {
             int matchedCorrectTypings = (int) correctTypings.stream()
                     .filter(correctTyping -> correctTyping.getMatchId().equals(match.getId()))
                     .count();
             String result = String.format("%d - %d", match.getHomeScore(), match.getAwayScore());
-            correctTypingsOutputs.add(new CorrectTypingsOutput(match.getHomeTeam(), result, match.getAwayTeam(), matchedCorrectTypings));
+            correctTypingOutputs.add(new CorrectTypingOutput(match.getHomeTeam(), result, match.getAwayTeam(), matchedCorrectTypings));
         }
-        return correctTypingsOutputs;
+        return correctTypingOutputs;
     }
 }

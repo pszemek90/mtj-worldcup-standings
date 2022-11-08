@@ -1,7 +1,6 @@
 package com.pszemek.mtjworldcupstandings.controller;
 
-import com.pszemek.mtjworldcupstandings.dto.CorrectTypingsOutput;
-import com.pszemek.mtjworldcupstandings.dto.FootballMatchOutput;
+import com.pszemek.mtjworldcupstandings.dto.CorrectTypingOutput;
 import com.pszemek.mtjworldcupstandings.service.ResultsService;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,7 +22,7 @@ public class ResultsController {
     }
 
     @GetMapping()
-    public Map<String, List<CorrectTypingsOutput>> getAllResults() {
+    public Map<String, List<CorrectTypingOutput>> getAllResults() {
         return resultsService.getAllResults();
     }
 
