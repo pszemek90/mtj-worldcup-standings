@@ -31,4 +31,9 @@ public class User {
         this.country = country;
         return this;
     }
+
+    public User setPassword(String password) {
+        this.password = password;
+        return this;
+    }
 }

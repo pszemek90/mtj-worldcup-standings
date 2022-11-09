@@ -1,13 +1,17 @@
 package com.pszemek.mtjworldcupstandings.service;
 
+import com.pszemek.mtjworldcupstandings.dto.ChangePasswordRequest;
 import com.pszemek.mtjworldcupstandings.dto.UserDto;
 import com.pszemek.mtjworldcupstandings.entity.User;
 import com.pszemek.mtjworldcupstandings.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import javax.naming.AuthenticationException;
 import java.math.BigDecimal;
 import java.util.Optional;
 
@@ -17,9 +21,11 @@ public class UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository userRepository;
+    private final PasswordEncoder encoder;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, PasswordEncoder encoder) {
         this.userRepository = userRepository;
+        this.encoder = encoder;
     }
 
     public void addWinningAmount(Long userId, BigDecimal amount) {
@@ -57,8 +63,20 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public void saveUser(User user) {
+    public User saveUser(User user) {
         logger.info("Saving or updating user with id: {}", user.getId());
-        userRepository.save(user);
+        return userRepository.save(user);
+    }
+
+    public User changePassword(ChangePasswordRequest request) throws AuthenticationException {
+        logger.info("Change password requested by user id: {}", request.getUserId());
+        User user = getByUserId(request.getUserId());
+        UserDto principal = (UserDto) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if(!encoder.matches(request.getOldPassword(), principal.getPassword())) {
+            throw new AuthenticationException();
+        }
+        user.setPassword(encoder.encode(request.getNewPassword()));
+        return saveUser(user);
     }
 }
