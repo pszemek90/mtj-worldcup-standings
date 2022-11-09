@@ -109,6 +109,8 @@ public class UpdateResults {
         if(!recentlyFinishedMatches.isEmpty()) {
             BigDecimal poolShareForMatch = todaysPool.divide(BigDecimal.valueOf(recentlyFinishedMatches.size()), 2, RoundingMode.HALF_UP);
             logger.info("Todays pool share for one match: {}. Number of matches: {}", poolShareForMatch, recentlyFinishedMatches.size());
+            logger.info("Subtracting {} from overall pool", todaysPool);
+            overallPoolService.clearOverallPool();
             for(FootballMatchOutput finishedMatch : recentlyFinishedMatches) {
                 List<MatchTyping> typingsForCheck = allTypings.stream()
                         .filter(typing -> typing.getMatchId().equals(finishedMatch.getId()))

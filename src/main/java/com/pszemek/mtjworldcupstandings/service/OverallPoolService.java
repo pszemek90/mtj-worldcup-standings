@@ -35,4 +35,11 @@ public class OverallPoolService {
         overallPool.setAmount(overallPool.getAmount().add(pool));
         overallPoolRepository.save(overallPool);
     }
+
+    public void clearOverallPool() {
+        logger.info("Clearing overall pool");
+        OverallPool overallPool = getOverallPool();
+        overallPool.setAmount(BigDecimal.ZERO);
+        overallPoolRepository.save(overallPool);
+    }
 }
