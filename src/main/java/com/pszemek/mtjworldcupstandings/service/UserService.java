@@ -1,11 +1,16 @@
 package com.pszemek.mtjworldcupstandings.service;
 
 import com.pszemek.mtjworldcupstandings.dto.ChangePasswordRequest;
+import com.pszemek.mtjworldcupstandings.dto.FootballMatchOutput;
 import com.pszemek.mtjworldcupstandings.dto.UserDto;
+import com.pszemek.mtjworldcupstandings.entity.AccountHistory;
+import com.pszemek.mtjworldcupstandings.entity.MatchTyping;
 import com.pszemek.mtjworldcupstandings.entity.User;
+import com.pszemek.mtjworldcupstandings.repository.AccountHistoryRepository;
 import com.pszemek.mtjworldcupstandings.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,7 +18,9 @@ import org.springframework.stereotype.Service;
 
 import javax.naming.AuthenticationException;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -21,20 +28,24 @@ public class UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository userRepository;
+    private final AccountHistoryRepository accountHistoryRepository;
     private final PasswordEncoder encoder;
 
-    public UserService(UserRepository userRepository, PasswordEncoder encoder) {
+    public UserService(UserRepository userRepository, AccountHistoryRepository accountHistoryRepository, PasswordEncoder encoder) {
         this.userRepository = userRepository;
+        this.accountHistoryRepository = accountHistoryRepository;
         this.encoder = encoder;
     }
 
-    public void addWinningAmount(Long userId, BigDecimal amount) {
+    public void addWinningAmount(Long userId, BigDecimal amount, FootballMatchOutput match) {
         logger.info("Adding balance of: {} for user: {}", amount, userId);
         Optional<User> userOptional = userRepository.findById(userId);
         if(userOptional.isPresent()) {
             User user = userOptional.get();
             user.setBalance(user.getBalance().add(amount));
             userRepository.save(user);
+            String message = "Wygrana z meczu: " + match.getHomeTeam() + " - " + match.getAwayTeam();
+            logEvent(userId, message, amount);
         } else {
             logger.error("User with id: {} not found", userId);
             throw new UsernameNotFoundException("Couldn't found user with Id: " + userId);
@@ -68,6 +79,15 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    public void lowerBalanceByOne(Long userId, MatchTyping typing) {
+        logger.info("Lowering balance for userId: {}", userId);
+        User user = getByUserId(userId);
+        user.setBalance(user.getBalance().subtract(BigDecimal.ONE));
+        saveUser(user);
+        String message = "Obastwiony mecz: " + typing.getHomeTeam() + " - " + typing.getAwayTeam();
+        logEvent(userId, message, BigDecimal.valueOf(-1L, 2));
+    }
+
     public User changePassword(ChangePasswordRequest request) throws AuthenticationException {
         logger.info("Change password requested by user id: {}", request.getUserId());
         User user = getByUserId(request.getUserId());
@@ -78,5 +98,18 @@ public class UserService {
         }
         user.setPassword(encoder.encode(request.getNewPassword()));
         return saveUser(user);
+    }
+
+    public void logEvent(Long userId, String message, BigDecimal difference) {
+        AccountHistory event = new AccountHistory(message, difference, userId);
+        accountHistoryRepository.save(event);
+    }
+
+    public List<AccountHistory> getAccountHistoryForUser(Long userId) {
+        Sort sortByDate = Sort.by("timestamp").descending();
+        return accountHistoryRepository.findAll(sortByDate)
+                .stream()
+                .filter(log -> log.getUserId().equals(userId))
+                .collect(Collectors.toList());
     }
 }

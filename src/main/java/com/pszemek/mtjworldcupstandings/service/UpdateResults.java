@@ -132,7 +132,7 @@ public class UpdateResults {
             BigDecimal splitFromPoolShare = poolShare.divide(BigDecimal.valueOf(winners.size()), 2, RoundingMode.HALF_UP);
             BigDecimal split = splitFromMatch.add(splitFromPoolShare);
             for(Long userId : winners) {
-                userService.addWinningAmount(userId, split);
+                userService.addWinningAmount(userId, split, finishedMatch);
             }
         } else {
             logger.info("No winners for match: {} - {}", finishedMatch.getHomeTeam(), finishedMatch.getAwayTeam());

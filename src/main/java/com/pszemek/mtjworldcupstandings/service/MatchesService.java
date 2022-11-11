@@ -4,16 +4,13 @@ import com.pszemek.mtjworldcupstandings.dto.FootballMatchOutput;
 import com.pszemek.mtjworldcupstandings.dto.InputTypings;
 import com.pszemek.mtjworldcupstandings.entity.Match;
 import com.pszemek.mtjworldcupstandings.entity.MatchTyping;
-import com.pszemek.mtjworldcupstandings.entity.User;
 import com.pszemek.mtjworldcupstandings.enums.TypingResultEnum;
 import com.pszemek.mtjworldcupstandings.mapper.MatchOutputEntityMapper;
 import com.pszemek.mtjworldcupstandings.mapper.MatchTypingFootballMatchOutputMapper;
 import com.pszemek.mtjworldcupstandings.repository.MatchRepository;
 import com.pszemek.mtjworldcupstandings.repository.MatchTypingRepository;
-import com.pszemek.mtjworldcupstandings.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.PersistenceException;
@@ -30,31 +27,20 @@ public class MatchesService {
 
     private final MatchTypingRepository matchTypingRepository;
     private final MatchRepository matchRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
 
-    public MatchesService(MatchTypingRepository matchTypingRepository, MatchRepository matchRepository, UserRepository userRepository) {
+    public MatchesService(MatchTypingRepository matchTypingRepository, MatchRepository matchRepository, UserService userService) {
         this.matchTypingRepository = matchTypingRepository;
         this.matchRepository = matchRepository;
-        this.userRepository = userRepository;
+        this.userService = userService;
     }
 
     public List<FootballMatchOutput> getMatchesForToday(String stringDate) {
         logger.info("Getting matches for {}", stringDate);
         LocalDate date = LocalDate.parse(stringDate);
-        List<FootballMatchOutput> todaysMatches = getAllMatches().stream()
+        return getAllMatches().stream()
                 .filter(match -> match.getDate().toLocalDate().equals(date))
                 .collect(Collectors.toList());
-        //todo just for testing in dev, delete before prod move
-        /*if(date.isEqual(LocalDate.now())) {
-            todaysMatches.add(new FootballMatchOutput()
-                    .setDate(LocalDateTime.of(LocalDate.now(), LocalTime.of(20, 0)))
-                    .setId(999)
-                    .setAwayScore(0)
-                    .setHomeScore(0)
-                    .setAwayTeam("testTeam1")
-                    .setHomeTeam("testTeam2"));
-        }*/
-        return todaysMatches;
     }
 
     public List<FootballMatchOutput> getAllMatches() {
@@ -80,7 +66,7 @@ public class MatchesService {
                 typing.setUserId(userId);
                 typing.setStatus(TypingResultEnum.UNKNOWN);
                 matchTypingRepository.save(typing);
-                lowerBalance(userId);
+                lowerBalanceByOne(userId, typing);
                 raisePoolByOne(match);
             }
         }
@@ -98,17 +84,8 @@ public class MatchesService {
         }
     }
 
-    private void lowerBalance(Long userId) {
-        Optional<User> userOptional = userRepository.findById(userId);
-        if(userOptional.isPresent()) {
-            logger.info("Lowering balance for userId: {}", userId);
-            User user = userOptional.get();
-            user.setBalance(user.getBalance().subtract(BigDecimal.ONE));
-            userRepository.save(user);
-        } else {
-            logger.error("Username with id: {} not found", userId);
-            throw new UsernameNotFoundException("Couldn't found username with id: " + userId);
-        }
+    private void lowerBalanceByOne(Long userId, MatchTyping typing) {
+        userService.lowerBalanceByOne(userId, typing);
     }
 
     public void saveAllMatches(List<FootballMatchOutput> matchesToAddOrUpdate) {
