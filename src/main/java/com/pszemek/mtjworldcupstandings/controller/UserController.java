@@ -1,9 +1,8 @@
 package com.pszemek.mtjworldcupstandings.controller;
 
-import com.pszemek.mtjworldcupstandings.dto.AccountHistoryDto;
+import com.pszemek.mtjworldcupstandings.dto.AccountHistoryPageRequest;
 import com.pszemek.mtjworldcupstandings.dto.ChangePasswordRequest;
 import com.pszemek.mtjworldcupstandings.entity.User;
-import com.pszemek.mtjworldcupstandings.mapper.AccountHistoryMapper;
 import com.pszemek.mtjworldcupstandings.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.naming.AuthenticationException;
 import java.math.BigDecimal;
-import java.util.List;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
@@ -49,8 +47,8 @@ public class UserController {
     }
 
     @GetMapping("/history")
-    public List<AccountHistoryDto> getUsersHistory(Long userId) {
-        logger.info("Getting account history for user: {}", userId);
-        return AccountHistoryMapper.mapFromEntity(userService.getAccountHistoryForUser(userId));
+    public AccountHistoryPageRequest getUsersHistory(Long userId, int pageNumber) {
+        logger.info("Getting account history for user: {}, page: {}", userId, pageNumber);
+        return userService.getAccountHistoryForUser(userId, pageNumber);
     }
 }

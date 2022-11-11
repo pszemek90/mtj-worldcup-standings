@@ -1,15 +1,20 @@
 package com.pszemek.mtjworldcupstandings.service;
 
+import com.pszemek.mtjworldcupstandings.dto.AccountHistoryPageRequest;
 import com.pszemek.mtjworldcupstandings.dto.ChangePasswordRequest;
 import com.pszemek.mtjworldcupstandings.dto.FootballMatchOutput;
 import com.pszemek.mtjworldcupstandings.dto.UserDto;
 import com.pszemek.mtjworldcupstandings.entity.AccountHistory;
 import com.pszemek.mtjworldcupstandings.entity.MatchTyping;
 import com.pszemek.mtjworldcupstandings.entity.User;
+import com.pszemek.mtjworldcupstandings.mapper.AccountHistoryMapper;
 import com.pszemek.mtjworldcupstandings.repository.AccountHistoryRepository;
 import com.pszemek.mtjworldcupstandings.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -105,11 +110,12 @@ public class UserService {
         accountHistoryRepository.save(event);
     }
 
-    public List<AccountHistory> getAccountHistoryForUser(Long userId) {
+    public AccountHistoryPageRequest getAccountHistoryForUser(Long userId, int pageNumber) {
         Sort sortByDate = Sort.by("timestamp").descending();
-        return accountHistoryRepository.findAll(sortByDate)
-                .stream()
-                .filter(log -> log.getUserId().equals(userId))
-                .collect(Collectors.toList());
+        Pageable page = PageRequest.of(pageNumber - 1, 10, sortByDate);
+        Page<AccountHistory> historyPage = accountHistoryRepository.findByUserId(page, userId);
+        return new AccountHistoryPageRequest()
+                .setTotalAmount(historyPage.getTotalElements())
+                .setHistory(AccountHistoryMapper.mapFromEntity(historyPage.get().collect(Collectors.toList())));
     }
 }
