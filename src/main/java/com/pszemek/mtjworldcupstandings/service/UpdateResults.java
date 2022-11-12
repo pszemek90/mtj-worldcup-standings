@@ -10,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpServerErrorException;
@@ -21,6 +23,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 @Component
@@ -52,26 +55,26 @@ public class UpdateResults {
         this.overallPoolService = overallPoolService;
     }
 
-    //todo change cron before prod
     @Scheduled(cron = "0 15 0 * * *")
-    private void getCurrentMatches() {
+    @Retryable(value = {HttpServerErrorException.class}, maxAttempts = 10, backoff = @Backoff(delay = 300000))
+    public void getCurrentMatches() {
         getBearerToken();
-//        List<FootballMatchOutput> matchesFromApi = getMatches();
+        List<FootballMatchOutput> matchesFromApi = getMatches();
         //todo for testing purposes
-        List<FootballMatchOutput> matchesFromApi = getMatchesFromPlainJson();
+//        List<FootballMatchOutput> matchesFromApi = getMatchesFromPlainJson();
         List<FootballMatchOutput> matchesFromDb = matchesService.getAllMatches();
-        //todo maybe get rid of this? one-timer
-        if(matchesFromDb.isEmpty()) {
-            matchesService.saveAllMatches(matchesFromApi);
-        }
-        else {
+        //todo check if this doesn't trigger any exception
+//        if(matchesFromDb.isEmpty()) {
+//            matchesService.saveAllMatches(matchesFromApi);
+//        }
+//        else {
             List<FootballMatchOutput> matchesToUpdate = compareAndUpdateMatches(matchesFromApi, matchesFromDb);
             if(!matchesToUpdate.isEmpty()) {
                 updateTypings();
             } else {
                 logger.info("No typings update today");
             }
-        }
+//        }
     }
 
     private List<FootballMatchOutput> compareAndUpdateMatches(List<FootballMatchOutput> matchesFromApi, List<FootballMatchOutput> matchesFromDb) {
