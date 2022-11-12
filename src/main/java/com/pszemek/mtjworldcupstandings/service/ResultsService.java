@@ -29,16 +29,6 @@ public class ResultsService {
         logger.info("Getting all matches results");
         List<FootballMatchOutput> allMatches = matchesService.getAllMatches();
         logger.info("Matches fetched from db: {}", allMatches.size());
-        // todo test finished match, delete before prod move
-        /*FootballMatchOutput testMatch = new FootballMatchOutput()
-                .setId(999)
-                .setDate(LocalDateTime.now())
-                .setHomeTeam("testTeam1")
-                .setAwayTeam("testTeam2")
-                .setHomeScore(2)
-                .setAwayScore(0)
-                .setFinished(true);
-        allMatches.add(testMatch);*/
         Map<LocalDateTime, List<FootballMatchOutput>> finishedMatchesByDate =
                 allMatches.stream()
                         .filter(FootballMatchOutput::isFinished)

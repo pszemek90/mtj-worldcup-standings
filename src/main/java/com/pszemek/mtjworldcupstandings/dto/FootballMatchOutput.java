@@ -75,7 +75,6 @@ public class FootballMatchOutput {
         return this;
     }
 
-    //todo for test purposes, probably to delete
     public FootballMatchOutput setFinished(Boolean finished) {
         this.finished = finished;
         return this;
