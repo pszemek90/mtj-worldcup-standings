@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import javax.persistence.PersistenceException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -40,6 +41,7 @@ public class MatchesService {
         LocalDate date = LocalDate.parse(stringDate);
         return getAllMatches().stream()
                 .filter(match -> match.getDate().toLocalDate().equals(date))
+                .sorted(Comparator.comparing(FootballMatchOutput::getDate))
                 .collect(Collectors.toList());
     }
 
