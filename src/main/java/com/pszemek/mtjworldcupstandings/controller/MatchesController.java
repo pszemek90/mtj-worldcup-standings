@@ -12,13 +12,13 @@ import java.util.List;
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RequestMapping("/matches")
-public class MainController {
+public class MatchesController {
 
-    private final Logger logger = LoggerFactory.getLogger(MainController.class);
+    private final Logger logger = LoggerFactory.getLogger(MatchesController.class);
 
     private final MatchesService matchesService;
 
-    public MainController(MatchesService matchesService) {
+    public MatchesController(MatchesService matchesService) {
         this.matchesService = matchesService;
     }
 
