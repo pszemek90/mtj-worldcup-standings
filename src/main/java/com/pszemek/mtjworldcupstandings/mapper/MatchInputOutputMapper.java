@@ -12,8 +12,8 @@ public class MatchInputOutputMapper {
                 .setId(input.getId())
                 .setAwayScore(input.getAwayScore())
                 .setHomeScore(input.getHomeScore())
-                .setAwayTeam(input.getAwayTeamEn())
-                .setHomeTeam(input.getHomeTeamEn())
+                .setAwayTeam(TeamNameMapper.mapTeam(input.getAwayTeamEn()))
+                .setHomeTeam(TeamNameMapper.mapTeam(input.getHomeTeamEn()))
                 //adjusting to Poland time(CET) from time fetched from api
                 .setDate(input.getDate().minusHours(2L))
                 .setFinished(input.getFinished());
