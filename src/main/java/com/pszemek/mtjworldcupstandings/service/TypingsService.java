@@ -71,7 +71,8 @@ public class TypingsService {
             User user = userService.getByUserId(entry.getKey());
             TyperScore typerScore = new TyperScore()
                     .setUsername(user.getUsername())
-                    .setCorrectTypings(entry.getValue());
+                    .setCorrectTypings(entry.getValue())
+                    .setCountry(user.getCountry());
             typerScoreList.add(typerScore);
         }
         return typerScoreList.stream().sorted((t1, t2) -> t2.getCorrectTypings().compareTo(t1.getCorrectTypings())).collect(Collectors.toList());

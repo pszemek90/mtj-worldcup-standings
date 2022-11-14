@@ -9,6 +9,8 @@ public class TyperScore {
     private String username;
     @JsonProperty("correctTypings")
     private Integer correctTypings;
+    @JsonProperty("country")
+    private String country;
 
     public TyperScore setUsername(String username) {
         this.username = username;
@@ -17,6 +19,11 @@ public class TyperScore {
 
     public TyperScore setCorrectTypings(Integer correctTypings) {
         this.correctTypings = correctTypings;
+        return this;
+    }
+
+    public TyperScore setCountry(String country) {
+        this.country = country;
         return this;
     }
 }
