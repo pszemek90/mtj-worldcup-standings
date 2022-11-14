@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.pszemek</groupId>
     <artifactId>mtj-worldcup-standings</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>mtj-worldcup-standings</name>
     <description>mtj-worldcup-standings</description>
     <properties>
