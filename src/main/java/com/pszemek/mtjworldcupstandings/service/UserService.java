@@ -23,7 +23,6 @@ import org.springframework.stereotype.Service;
 
 import javax.naming.AuthenticationException;
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -90,7 +89,7 @@ public class UserService {
         user.setBalance(user.getBalance().subtract(BigDecimal.ONE));
         saveUser(user);
         String message = "Obastwiony mecz: " + typing.getHomeTeam() + " - " + typing.getAwayTeam();
-        logEvent(userId, message, BigDecimal.valueOf(-1L, 2));
+        logEvent(userId, message, BigDecimal.valueOf(-1L));
     }
 
     public User changePassword(ChangePasswordRequest request) throws AuthenticationException {
