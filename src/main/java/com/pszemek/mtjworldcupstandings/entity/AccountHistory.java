@@ -5,6 +5,7 @@ import lombok.Getter;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 @Getter
 @Entity(name = "account_history")
@@ -26,7 +27,7 @@ public class AccountHistory {
 
     public AccountHistory(String message, BigDecimal difference, Long userId) {
         this.message = message;
-        this.timestamp = LocalDateTime.now();
+        this.timestamp = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
         this.difference = difference;
         this.userId = userId;
     }
