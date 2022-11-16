@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pszemek.mtjworldcupstandings.configuration.CurrentBearerToken;
 import com.pszemek.mtjworldcupstandings.dto.*;
 import com.pszemek.mtjworldcupstandings.entity.MatchTyping;
+import com.pszemek.mtjworldcupstandings.entity.User;
 import com.pszemek.mtjworldcupstandings.enums.TypingResultEnum;
 import com.pszemek.mtjworldcupstandings.mapper.MatchInputOutputMapper;
 import org.slf4j.Logger;
@@ -23,7 +24,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.stream.Collectors;
 
 @Component
@@ -58,26 +58,22 @@ public class UpdateResults {
     @Scheduled(cron = "0 15 0 * * *")
     @Retryable(value = {HttpServerErrorException.class}, maxAttempts = 10, backoff = @Backoff(delay = 300000))
     public void getCurrentMatches() {
+        logger.info("Getting current matches triggered");
         getBearerToken();
         List<FootballMatchOutput> matchesFromApi = getMatches();
         //todo for testing purposes
 //        List<FootballMatchOutput> matchesFromApi = getMatchesFromPlainJson();
         List<FootballMatchOutput> matchesFromDb = matchesService.getAllMatches();
-        //todo check if this doesn't trigger any exception
-//        if(matchesFromDb.isEmpty()) {
-//            matchesService.saveAllMatches(matchesFromApi);
-//        }
-//        else {
-            List<FootballMatchOutput> matchesToUpdate = compareAndUpdateMatches(matchesFromApi, matchesFromDb);
-            if(!matchesToUpdate.isEmpty()) {
-                updateTypings();
-            } else {
-                logger.info("No typings update today");
-            }
-//        }
+        List<FootballMatchOutput> matchesToUpdate = compareAndUpdateMatches(matchesFromApi, matchesFromDb);
+        if (!matchesToUpdate.isEmpty()) {
+            updateTypings();
+        } else {
+            logger.info("No typings update today");
+        }
     }
 
     private List<FootballMatchOutput> compareAndUpdateMatches(List<FootballMatchOutput> matchesFromApi, List<FootballMatchOutput> matchesFromDb) {
+        logger.info("Comparing and updating matches");
         List<FootballMatchOutput> matchesToAddOrUpdate =
                 matchesFromApi.stream()
                         .filter(match -> !matchesFromDb.contains(match))
@@ -109,6 +105,13 @@ public class UpdateResults {
                 .collect(Collectors.toList());
         BigDecimal todaysPool = overallPoolService.getOverallPool().getAmount();
         logger.info("Todays overall pool: {}", todaysPool);
+        logger.info("Validating overall cash amount before split");
+        try {
+            // not so critical to stop updating typings
+            validateCashPool(recentlyFinishedMatches, todaysPool);
+        } catch (Exception e) {
+            logger.error("Cash pool validation failed. Cause: {}", e.getMessage());
+        }
         if(!recentlyFinishedMatches.isEmpty()) {
             BigDecimal poolShareForMatch = todaysPool.divide(BigDecimal.valueOf(recentlyFinishedMatches.size()), 2, RoundingMode.HALF_UP);
             logger.info("Todays pool share for one match: {}. Number of matches: {}", poolShareForMatch, recentlyFinishedMatches.size());
@@ -125,9 +128,39 @@ public class UpdateResults {
         }
         BigDecimal nextDayPool = overallPoolService.getOverallPool().getAmount();
         logger.info("Overall pool for next day: {}", nextDayPool);
+        logger.info("Validating overall cash amount after split");
+        try {
+            validateCashPool(List.of(), nextDayPool);
+        } catch (Exception e) {
+            logger.error("Cash pool validation failed. Cause: {}", e.getMessage());
+        }
+    }
+
+    private void validateCashPool(List<FootballMatchOutput> recentlyFinishedMatches, BigDecimal todaysPool) {
+        BigDecimal matchesPool = BigDecimal.ZERO;
+        if(!recentlyFinishedMatches.isEmpty()){
+            matchesPool = recentlyFinishedMatches.stream()
+                    .map(FootballMatchOutput::getPool)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            logger.info("Today's pool from finished matches: {}", matchesPool);
+        }
+        List<User> allUsers = userService.getAllUsers();
+        BigDecimal usersBalance = allUsers.stream().map(User::getBalance).reduce(BigDecimal.ZERO, BigDecimal::add);
+        logger.info("Today's users balance: {}", usersBalance);
+        BigDecimal todaysCash = matchesPool.add(usersBalance).add(todaysPool);
+        logger.info("Today's cash: {}", todaysCash);
+        BigDecimal startingBalance = BigDecimal.valueOf(65L);
+        BigDecimal userCount = BigDecimal.valueOf(allUsers.size());
+        BigDecimal startingCash = startingBalance.multiply(userCount);
+        logger.info("Starting cash: {}", startingCash);
+        // if difference between today's cash and starting cash is greater than 1 then warn
+        if(todaysCash.subtract(startingCash).abs().compareTo(BigDecimal.ONE) > 0){
+            logger.warn("Starting cash and today's cash doesn't match");
+        }
     }
 
     private void splitPool(List<Long> winners, FootballMatchOutput finishedMatch, BigDecimal poolShare) {
+        logger.info("Splitting pool");
         BigDecimal poolFromMatch = finishedMatch.getPool();
         if(!winners.isEmpty()) {
             logger.info("Splitting pool for match: {} - {}", finishedMatch.getHomeTeam(), finishedMatch.getAwayTeam());
@@ -146,6 +179,7 @@ public class UpdateResults {
     }
 
     private List<Long> checkWinners(List<MatchTyping> typingsForCheck, FootballMatchOutput finishedMatch) {
+        logger.info("Checking winners for today");
         Integer matchHomeScore = finishedMatch.getHomeScore();
         Integer matchAwayScore = finishedMatch.getAwayScore();
         List<Long> winners = new ArrayList<>();
@@ -167,12 +201,14 @@ public class UpdateResults {
     }
 
     private List<FootballMatchOutput> getMatches() {
+        logger.info("Getting matches from API");
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(CurrentBearerToken.getToken());
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
         ResponseEntity<MatchesInputResponse> response;
         try {
+            logger.info("Calling matches API");
             response = restTemplate.exchange(allMatchesUrl, HttpMethod.GET, httpEntity, MatchesInputResponse.class);
             logger.info("Successful call to all matches api");
         } catch (Exception ex) {
@@ -191,6 +227,7 @@ public class UpdateResults {
         HttpEntity<ApiLoginRequest> request = new HttpEntity<>(apiLoginRequest);
         ResponseEntity<BearerTokenDto> bearerTokenResponseEntity;
         try {
+            logger.info("Calling login API");
             bearerTokenResponseEntity = restTemplate.postForEntity(loginUrl, request, BearerTokenDto.class);
         } catch (Exception ex) {
             logger.error("Exception while getting new Bearer token from api: {}", ex.getMessage());

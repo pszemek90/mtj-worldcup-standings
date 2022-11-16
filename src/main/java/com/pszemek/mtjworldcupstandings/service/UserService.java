@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import javax.naming.AuthenticationException;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -43,17 +44,11 @@ public class UserService {
 
     public void addWinningAmount(Long userId, BigDecimal amount, FootballMatchOutput match) {
         logger.info("Adding balance of: {} for user: {}", amount, userId);
-        Optional<User> userOptional = userRepository.findById(userId);
-        if(userOptional.isPresent()) {
-            User user = userOptional.get();
-            user.setBalance(user.getBalance().add(amount));
-            userRepository.save(user);
-            String message = "Wygrana z meczu: " + match.getHomeTeam() + " - " + match.getAwayTeam();
-            logEvent(userId, message, amount);
-        } else {
-            logger.error("User with id: {} not found", userId);
-            throw new UsernameNotFoundException("Couldn't found user with Id: " + userId);
-        }
+        User user = getByUserId(userId);
+        user.setBalance(user.getBalance().add(amount));
+        userRepository.save(user);
+        String message = "Wygrana z meczu: " + match.getHomeTeam() + " - " + match.getAwayTeam();
+        logEvent(userId, message, amount);
     }
 
     public User getByUserId(Long userId) {
@@ -116,5 +111,10 @@ public class UserService {
         return new AccountHistoryPageRequest()
                 .setTotalAmount(historyPage.getTotalElements())
                 .setHistory(AccountHistoryMapper.mapFromEntity(historyPage.get().collect(Collectors.toList())));
+    }
+
+    public List<User> getAllUsers() {
+        logger.info("Getting all users");
+        return userRepository.findAll();
     }
 }

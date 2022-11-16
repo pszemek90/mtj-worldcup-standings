@@ -45,7 +45,18 @@ public class MatchesService {
                 .collect(Collectors.toList());
     }
 
+    public Match getMatchById(Integer matchId) {
+        Optional<Match> matchEntityOptional = matchRepository.findByMatchId(matchId);
+        if(matchEntityOptional.isPresent()) {
+            return matchEntityOptional.get();
+        } else {
+            logger.error("Couldn't found a match with id: {}", matchId);
+            throw new PersistenceException("Couldn't found a match with id: " + matchId);
+        }
+    }
+
     public List<FootballMatchOutput> getAllMatches() {
+        logger.info("Fetching matches from DB");
         List<Match> matchesFromDb = matchRepository.findAll();
         return MatchOutputEntityMapper.mapFromEntity(matchesFromDb);
     }
@@ -75,15 +86,9 @@ public class MatchesService {
     }
 
     private void raisePoolByOne(FootballMatchOutput match) {
-        Optional<Match> matchEntityOptional = matchRepository.findByMatchId(match.getId());
-        if(matchEntityOptional.isPresent()) {
-            Match matchEntity = matchEntityOptional.get();
-            matchEntity.setPool(matchEntity.getPool().add(BigDecimal.ONE));
-            matchRepository.save(matchEntity);
-        } else {
-            logger.error("Couldn't found a match with id: {}", match.getId());
-            throw new PersistenceException("Couldn't found a match with id: " + match.getId());
-        }
+        Match matchEntity = getMatchById(match.getId());
+        matchEntity.setPool(matchEntity.getPool().add(BigDecimal.ONE));
+        matchRepository.save(matchEntity);
     }
 
     private void lowerBalanceByOne(Long userId, MatchTyping typing) {
@@ -111,15 +116,9 @@ public class MatchesService {
     }
 
     public void clearMatchPool(FootballMatchOutput finishedMatch) {
-        Optional<Match> matchEntityOptional = matchRepository.findByMatchId(finishedMatch.getId());
-        if(matchEntityOptional.isPresent()) {
-            logger.info("Clearing pool for match: {} - {}", finishedMatch.getHomeTeam(), finishedMatch.getAwayTeam());
-            Match match = matchEntityOptional.get();
-            match.setPool(BigDecimal.ZERO);
-            matchRepository.save(match);
-        } else {
-            logger.error("Couldn't find match with id: {} in database", finishedMatch.getId());
-            throw new IllegalStateException("Couldn't find match in database!");
-        }
+        logger.info("Clearing pool for match: {} - {}", finishedMatch.getHomeTeam(), finishedMatch.getAwayTeam());
+        Match match = getMatchById(finishedMatch.getId());
+        match.setPool(BigDecimal.ZERO);
+        matchRepository.save(match);
     }
 }

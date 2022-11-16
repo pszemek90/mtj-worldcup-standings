@@ -8,6 +8,8 @@ import com.pszemek.mtjworldcupstandings.entity.User;
 import com.pszemek.mtjworldcupstandings.enums.TypingResultEnum;
 import com.pszemek.mtjworldcupstandings.mapper.MatchTypingFootballMatchOutputMapper;
 import com.pszemek.mtjworldcupstandings.repository.MatchTypingRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -16,6 +18,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class TypingsService {
+    private static final Logger logger = LoggerFactory.getLogger(TypingsService.class);
+
     private final MatchTypingRepository typingRepository;
     private final UserService userService;
 
@@ -25,6 +29,7 @@ public class TypingsService {
     }
 
     public Map<String, List<TypingOutput>> getTypingsForUser(Long userId) {
+        logger.info("Getting typings for user: {}", userId);
         List<MatchTyping> userTypings = typingRepository.findByUserId(userId);
         List<FootballMatchOutput> typingsOutput = MatchTypingFootballMatchOutputMapper.mapToFootballMatchOutput(userTypings);
         Map<LocalDateTime, List<FootballMatchOutput>> userTypingsMap = typingsOutput.stream().collect(Collectors.groupingBy(FootballMatchOutput::getDate));
@@ -52,14 +57,17 @@ public class TypingsService {
     }
 
     public List<MatchTyping> getAllTypingEntities() {
+        logger.info("Getting all typing entities");
         return typingRepository.findAll();
     }
 
     public void saveAll(List<MatchTyping> allTypings) {
+        logger.info("Saving typing list");
         typingRepository.saveAll(allTypings);
     }
 
     public List<TyperScore> getAllTyperScores() {
+        logger.info("Getting all typer scores");
         Map<Long, List<MatchTyping>> typingsByUserId = typingRepository.findAll().stream().collect(Collectors.groupingBy(MatchTyping::getUserId));
         Map<Long, Integer> typerScoreMap = new TreeMap<>();
         for (Map.Entry<Long, List<MatchTyping>> entry : typingsByUserId.entrySet()) {
