@@ -26,6 +26,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Service with scheduled method to update matches state basing on api, split pool for winner and store cash for matches
+ * with no correct typings. Methods with unit tests are with package private scope.
+ */
 @Component
 public class UpdateResults {
     private static final Logger logger = LoggerFactory.getLogger(UpdateResults.class);
@@ -136,7 +140,8 @@ public class UpdateResults {
         }
     }
 
-    private void validateCashPool(List<FootballMatchOutput> recentlyFinishedMatches, BigDecimal todaysPool) {
+    //package private scope for testing
+    void validateCashPool(List<FootballMatchOutput> recentlyFinishedMatches, BigDecimal todaysPool) {
         BigDecimal matchesPool = BigDecimal.ZERO;
         if(!recentlyFinishedMatches.isEmpty()){
             matchesPool = recentlyFinishedMatches.stream()
@@ -147,6 +152,7 @@ public class UpdateResults {
         List<User> allUsers = userService.getAllUsers();
         BigDecimal usersBalance = allUsers.stream().map(User::getBalance).reduce(BigDecimal.ZERO, BigDecimal::add);
         logger.info("Today's users balance: {}", usersBalance);
+        logger.info("Today's pool: {}", todaysPool);
         BigDecimal todaysCash = matchesPool.add(usersBalance).add(todaysPool);
         logger.info("Today's cash: {}", todaysCash);
         BigDecimal startingBalance = BigDecimal.valueOf(65L);
@@ -159,7 +165,7 @@ public class UpdateResults {
         }
     }
 
-    private void splitPool(List<Long> winners, FootballMatchOutput finishedMatch, BigDecimal poolShare) {
+    void splitPool(List<Long> winners, FootballMatchOutput finishedMatch, BigDecimal poolShare) {
         logger.info("Splitting pool");
         BigDecimal poolFromMatch = finishedMatch.getPool();
         if(!winners.isEmpty()) {
