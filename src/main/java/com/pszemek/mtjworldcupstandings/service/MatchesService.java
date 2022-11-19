@@ -56,7 +56,7 @@ public class MatchesService {
     }
 
     public List<FootballMatchOutput> getAllMatches() {
-        logger.info("Fetching matches from DB");
+        logger.info("Fetching all matches from DB");
         List<Match> matchesFromDb = matchRepository.findAll();
         return MatchOutputEntityMapper.mapFromEntity(matchesFromDb);
     }
@@ -68,13 +68,14 @@ public class MatchesService {
         for(FootballMatchOutput match : matches) {
             Optional<MatchTyping> matchAlreadyTyped = matchTypingRepository.findByUserIdAndMatchId(userId, match.getId());
             if(matchAlreadyTyped.isPresent()){
-                logger.info("Match {} - {} was already typed", match.getHomeTeam(), match.getAwayTeam());
+                logger.info("Match {} - {} was already typed. Updating typing.", match.getHomeTeam(), match.getAwayTeam());
                 MatchTyping matchToUpdate = matchAlreadyTyped.get()
                         .setAwayScore(match.getAwayScore())
                         .setHomeScore(match.getHomeScore());
                 matchTypingRepository.save(matchToUpdate);
             } else {
-                logger.info("Match {} - {} is typed for the first time", match.getHomeTeam(), match.getAwayTeam());
+                logger.info("Match {} - {} is typed for the first time. Sending new type and lowering balance",
+                        match.getHomeTeam(), match.getAwayTeam());
                 MatchTyping typing = MatchTypingFootballMatchOutputMapper.mapToEntity(match);
                 typing.setUserId(userId);
                 typing.setStatus(TypingResultEnum.UNKNOWN);

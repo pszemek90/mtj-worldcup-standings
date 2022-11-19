@@ -34,6 +34,7 @@ public class AuthController {
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
         String usernameLowerCase = loginRequest.getUsername().toLowerCase();
+        logger.info("Authentication request for user: {}", usernameLowerCase);
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(usernameLowerCase, loginRequest.getPassword())
         );

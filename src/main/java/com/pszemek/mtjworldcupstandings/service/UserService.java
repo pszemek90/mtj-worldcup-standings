@@ -52,6 +52,7 @@ public class UserService {
     }
 
     public User getByUserId(Long userId) {
+        logger.info("Fetching user: {}, from DB", userId);
         Optional<User> userOptional = userRepository.findById(userId);
         if(userOptional.isPresent()) {
             return userOptional.get();
@@ -62,6 +63,7 @@ public class UserService {
     }
 
     public BigDecimal getUserBalanceById(Long userId) {
+        logger.info("Getting user balance for user: {}", userId);
         User user = getByUserId(userId);
         return user.getBalance();
     }

@@ -39,12 +39,14 @@ public class ResultsService {
         List<MatchTyping> correctTypings = typingsService.getAllTypingEntities().stream()
                 .filter(typing -> typing.getStatus() == TypingResultEnum.CORRECT)
                 .collect(Collectors.toList());
+        logger.info("Correct typings count overall: {}", correctTypings.size());
         finishedMatchesByDate.forEach((k, v) -> finishedMatchesByDateString.put(k.toLocalDate().toString(), connectMatchWithTypings(v, correctTypings)));
         logger.info("Finished matches mapped to string: {}", finishedMatchesByDateString.size());
         return finishedMatchesByDateString;
     }
 
     private List<CorrectTypingOutput> connectMatchWithTypings(List<FootballMatchOutput> matches, List<MatchTyping> correctTypings) {
+        logger.info("Connecting matches with correct typings");
         List<CorrectTypingOutput> correctTypingOutputs = new ArrayList<>();
         for(FootballMatchOutput match : matches) {
             int matchedCorrectTypings = (int) correctTypings.stream()
