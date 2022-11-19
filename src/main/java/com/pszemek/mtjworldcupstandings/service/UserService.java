@@ -81,7 +81,7 @@ public class UserService {
     }
 
     public void lowerBalanceByOne(Long userId, MatchTyping typing) {
-        logger.info("Lowering balance for userId: {}", userId);
+        logger.info("Lowering balance for userId: {} by one", userId);
         User user = getByUserId(userId);
         user.setBalance(user.getBalance().subtract(BigDecimal.ONE));
         saveUser(user);
@@ -102,6 +102,7 @@ public class UserService {
     }
 
     public void logEvent(Long userId, String message, BigDecimal difference) {
+        logger.info("Logging event to account history for user: {}", userId);
         AccountHistory event = new AccountHistory(message, difference, userId);
         accountHistoryRepository.save(event);
     }

@@ -46,6 +46,7 @@ public class MatchesService {
     }
 
     public Match getMatchById(Integer matchId) {
+        logger.info("Fetching match: {}, from DB", matchId);
         Optional<Match> matchEntityOptional = matchRepository.findByMatchId(matchId);
         if(matchEntityOptional.isPresent()) {
             return matchEntityOptional.get();
@@ -87,6 +88,7 @@ public class MatchesService {
     }
 
     private void raisePoolByOne(FootballMatchOutput match) {
+        logger.info("Raising pool for match: {} - {} by one", match.getHomeTeam(), match.getAwayTeam());
         Match matchEntity = getMatchById(match.getId());
         matchEntity.setPool(matchEntity.getPool().add(BigDecimal.ONE));
         matchRepository.save(matchEntity);
@@ -97,6 +99,7 @@ public class MatchesService {
     }
 
     public void saveAllMatches(List<FootballMatchOutput> matchesToAddOrUpdate) {
+        logger.info("Save all matches triggered for {} matches", matchesToAddOrUpdate.size());
         for(FootballMatchOutput match : matchesToAddOrUpdate) {
             Optional<Match> matchToUpdateOptional = matchRepository.findByMatchId(match.getId());
             Match newMatch = MatchOutputEntityMapper.mapFromOutput(match);

@@ -65,7 +65,7 @@ public class UpdateResults {
         logger.info("Getting current matches triggered");
         getBearerToken();
         List<FootballMatchOutput> matchesFromApi = getMatches();
-        //todo for testing purposes
+        //using fallback Json instead of Api call
 //        List<FootballMatchOutput> matchesFromApi = getMatchesFromPlainJson();
         List<FootballMatchOutput> matchesFromDb = matchesService.getAllMatches();
         List<FootballMatchOutput> matchesToUpdate = compareAndUpdateMatches(matchesFromApi, matchesFromDb);
@@ -77,7 +77,7 @@ public class UpdateResults {
     }
 
     private List<FootballMatchOutput> compareAndUpdateMatches(List<FootballMatchOutput> matchesFromApi, List<FootballMatchOutput> matchesFromDb) {
-        logger.info("Comparing and updating matches");
+        logger.info("Comparing and updating matches between API and DB");
         List<FootballMatchOutput> matchesToAddOrUpdate =
                 matchesFromApi.stream()
                         .filter(match -> !matchesFromDb.contains(match))
