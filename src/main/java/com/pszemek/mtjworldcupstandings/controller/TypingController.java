@@ -3,11 +3,17 @@ package com.pszemek.mtjworldcupstandings.controller;
 import com.pszemek.mtjworldcupstandings.dto.FootballMatchOutput;
 import com.pszemek.mtjworldcupstandings.dto.TyperScore;
 import com.pszemek.mtjworldcupstandings.dto.TypingOutput;
+import com.pszemek.mtjworldcupstandings.dto.UserDto;
 import com.pszemek.mtjworldcupstandings.service.TypingsService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.HttpServerErrorException;
 
 import java.util.List;
 import java.util.Map;
@@ -17,6 +23,8 @@ import java.util.Map;
 @RequestMapping("/typings")
 public class TypingController {
 
+    private static final Logger logger = LoggerFactory.getLogger(TypingController.class);
+
     private final TypingsService typingsService;
 
     public TypingController(TypingsService typingsService) {
@@ -24,7 +32,12 @@ public class TypingController {
     }
 
     @GetMapping()
-    public Map<String, List<TypingOutput>> getTypingsForUser(Long userId) {
+    public Map<String, List<TypingOutput>> getTypingsForUser(Long userId, Authentication authentication) {
+        UserDto user = (UserDto) authentication.getPrincipal();
+        if(!userId.equals(user.getId())){
+            logger.error("Attempt to unauthorized access to user typings by user: {}", user.getId());
+            throw new HttpServerErrorException(HttpStatus.UNAUTHORIZED, "Unauthorized access to user's typings");
+        }
         return typingsService.getTypingsForUser(userId);
     }
 

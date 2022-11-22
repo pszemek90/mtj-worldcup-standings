@@ -11,11 +11,14 @@ import com.pszemek.mtjworldcupstandings.repository.MatchRepository;
 import com.pszemek.mtjworldcupstandings.repository.MatchTypingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpServerErrorException;
 
 import javax.persistence.PersistenceException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -67,6 +70,12 @@ public class MatchesService {
         logger.info("Typed matches amount: {}", matches.size());
         Long userId = inputTypings.getUserId();
         for(FootballMatchOutput match : matches) {
+            Match matchFromDb = getMatchById(match.getId());
+            if(matchFromDb.getDate().isBefore(LocalDateTime.now())){
+                logger.error("Attempt to send typing after match started by user: {}", userId);
+                logger.error("Sent typing: {} {} - {} {}", match.getHomeTeam(), match.getHomeScore(), match.getAwayScore(), match.getAwayTeam());
+                throw new HttpServerErrorException(HttpStatus.BAD_REQUEST, "Attempt to send typing after match started");
+            }
             Optional<MatchTyping> matchAlreadyTyped = matchTypingRepository.findByUserIdAndMatchId(userId, match.getId());
             if(matchAlreadyTyped.isPresent()){
                 logger.info("Match {} - {} was already typed. Updating typing.", match.getHomeTeam(), match.getAwayTeam());

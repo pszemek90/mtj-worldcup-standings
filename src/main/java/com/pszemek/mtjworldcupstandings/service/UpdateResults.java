@@ -112,7 +112,7 @@ public class UpdateResults {
         logger.info("Validating overall cash amount before split");
         try {
             // not so critical to stop updating typings
-            validateCashPool(recentlyFinishedMatches, todaysPool);
+            validateCashPool();
         } catch (Exception e) {
             logger.error("Cash pool validation failed. Cause: {}", e.getMessage());
         }
@@ -134,24 +134,23 @@ public class UpdateResults {
         logger.info("Overall pool for next day: {}", nextDayPool);
         logger.info("Validating overall cash amount after split");
         try {
-            validateCashPool(List.of(), nextDayPool);
+            validateCashPool();
         } catch (Exception e) {
             logger.error("Cash pool validation failed. Cause: {}", e.getMessage());
         }
     }
 
     //package private scope for testing
-    void validateCashPool(List<FootballMatchOutput> recentlyFinishedMatches, BigDecimal todaysPool) {
-        BigDecimal matchesPool = BigDecimal.ZERO;
-        if(!recentlyFinishedMatches.isEmpty()){
-            matchesPool = recentlyFinishedMatches.stream()
-                    .map(FootballMatchOutput::getPool)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            logger.info("Today's pool from finished matches: {}", matchesPool);
-        }
+    void validateCashPool() {
+        List<FootballMatchOutput> allMatches = matchesService.getAllMatches();
+        BigDecimal matchesPool = allMatches.stream()
+                .map(FootballMatchOutput::getPool)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        logger.info("Today's pool matches: {}", matchesPool);
         List<User> allUsers = userService.getAllUsers();
         BigDecimal usersBalance = allUsers.stream().map(User::getBalance).reduce(BigDecimal.ZERO, BigDecimal::add);
         logger.info("Today's users balance: {}", usersBalance);
+        BigDecimal todaysPool = overallPoolService.getOverallPool().getAmount();
         logger.info("Today's pool: {}", todaysPool);
         BigDecimal todaysCash = matchesPool.add(usersBalance).add(todaysPool);
         logger.info("Today's cash: {}", todaysCash);
