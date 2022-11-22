@@ -2,13 +2,16 @@ package com.pszemek.mtjworldcupstandings.controller;
 
 import com.pszemek.mtjworldcupstandings.dto.AccountHistoryPageRequest;
 import com.pszemek.mtjworldcupstandings.dto.ChangePasswordRequest;
+import com.pszemek.mtjworldcupstandings.dto.UserDto;
 import com.pszemek.mtjworldcupstandings.entity.User;
 import com.pszemek.mtjworldcupstandings.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpServerErrorException;
 
 import javax.naming.AuthenticationException;
 import java.math.BigDecimal;
@@ -26,7 +29,12 @@ public class UserController {
     }
 
     @GetMapping("/balance")
-    public BigDecimal getUserBalance(Long userId) {
+    public BigDecimal getUserBalance(Long userId, Authentication authentication) {
+        UserDto user = (UserDto) authentication.getPrincipal();
+        if(!userId.equals(user.getId())){
+            logger.error("Attempt to unauthorized access to user balance by user: {}", user.getId());
+            throw new HttpServerErrorException(HttpStatus.UNAUTHORIZED, "Unauthorized access to user's typings");
+        }
         return userService.getUserBalanceById(userId);
     }
 
@@ -47,7 +55,12 @@ public class UserController {
     }
 
     @GetMapping("/history")
-    public AccountHistoryPageRequest getUsersHistory(Long userId, int pageNumber) {
+    public AccountHistoryPageRequest getUsersHistory(Long userId, int pageNumber, Authentication authentication) {
+        UserDto user = (UserDto) authentication.getPrincipal();
+        if(!userId.equals(user.getId())){
+            logger.error("Attempt to unauthorized access to user history by user: {}", user.getId());
+            throw new HttpServerErrorException(HttpStatus.UNAUTHORIZED, "Unauthorized access to user's typings");
+        }
         logger.info("Getting account history for user: {}, page: {}", userId, pageNumber);
         return userService.getAccountHistoryForUser(userId, pageNumber);
     }
