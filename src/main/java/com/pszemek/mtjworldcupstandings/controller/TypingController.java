@@ -1,9 +1,6 @@
 package com.pszemek.mtjworldcupstandings.controller;
 
-import com.pszemek.mtjworldcupstandings.dto.FootballMatchOutput;
-import com.pszemek.mtjworldcupstandings.dto.TyperScore;
-import com.pszemek.mtjworldcupstandings.dto.TypingOutput;
-import com.pszemek.mtjworldcupstandings.dto.UserDto;
+import com.pszemek.mtjworldcupstandings.dto.*;
 import com.pszemek.mtjworldcupstandings.service.TypingsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.HttpServerErrorException;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -44,5 +42,10 @@ public class TypingController {
     @GetMapping("/typerScores")
     public List<TyperScore> getAllTyperScores() {
         return typingsService.getAllTyperScores();
+    }
+
+    @GetMapping("/allTypings")
+    public Map<LocalDate, MatchTypings> getAllTypings() {
+        return typingsService.getAllUsersTypings();
     }
 }

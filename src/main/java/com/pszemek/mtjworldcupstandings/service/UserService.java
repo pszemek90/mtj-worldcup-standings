@@ -52,7 +52,6 @@ public class UserService {
     }
 
     public User getByUserId(Long userId) {
-        logger.info("Fetching user: {}, from DB", userId);
         Optional<User> userOptional = userRepository.findById(userId);
         if(userOptional.isPresent()) {
             return userOptional.get();

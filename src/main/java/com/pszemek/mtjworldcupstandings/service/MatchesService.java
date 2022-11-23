@@ -134,4 +134,8 @@ public class MatchesService {
         match.setPool(BigDecimal.ZERO);
         matchRepository.save(match);
     }
+
+    public List<Match> getAllFinishedMatches() {
+        return matchRepository.findAllByFinishedIsTrue();
+    }
 }

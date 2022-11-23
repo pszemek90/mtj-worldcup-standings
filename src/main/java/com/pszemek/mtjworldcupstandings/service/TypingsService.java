@@ -1,8 +1,7 @@
 package com.pszemek.mtjworldcupstandings.service;
 
-import com.pszemek.mtjworldcupstandings.dto.FootballMatchOutput;
-import com.pszemek.mtjworldcupstandings.dto.TyperScore;
-import com.pszemek.mtjworldcupstandings.dto.TypingOutput;
+import com.pszemek.mtjworldcupstandings.dto.*;
+import com.pszemek.mtjworldcupstandings.entity.Match;
 import com.pszemek.mtjworldcupstandings.entity.MatchTyping;
 import com.pszemek.mtjworldcupstandings.entity.User;
 import com.pszemek.mtjworldcupstandings.enums.TypingResultEnum;
@@ -12,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,10 +22,12 @@ public class TypingsService {
 
     private final MatchTypingRepository typingRepository;
     private final UserService userService;
+    private final MatchesService matchesService;
 
-    public TypingsService(MatchTypingRepository typingRepository, UserService userService) {
+    public TypingsService(MatchTypingRepository typingRepository, UserService userService, MatchesService matchesService) {
         this.typingRepository = typingRepository;
         this.userService = userService;
+        this.matchesService = matchesService;
     }
 
     public Map<String, List<TypingOutput>> getTypingsForUser(Long userId) {
@@ -84,5 +86,42 @@ public class TypingsService {
             typerScoreList.add(typerScore);
         }
         return typerScoreList.stream().sorted((t1, t2) -> t2.getCorrectTypings().compareTo(t1.getCorrectTypings())).collect(Collectors.toList());
+    }
+
+    public Map<LocalDate, MatchTypings> getAllUsersTypings() {
+        Map<LocalDate, MatchTypings> usersTypings = new TreeMap<>(Comparator.reverseOrder());
+        List<MatchTyping> allTypings = getAllTypingEntities();
+        List<Match> finishedMatches = matchesService.getAllFinishedMatches();
+        List<Integer> finishedMatchIds = finishedMatches.stream().map(Match::getMatchId).collect(Collectors.toList());
+        // typings mapped by match date
+        Map<LocalDate, List<MatchTyping>> typingsByDate = allTypings.stream()
+                .filter(typing -> finishedMatchIds.contains(typing.getMatchId()))
+                .collect(Collectors.groupingBy(MatchTyping::getMatchDate));
+        //for every date
+        for (Map.Entry<LocalDate, List<MatchTyping>> entry : typingsByDate.entrySet()) {
+            LocalDate entryDate = entry.getKey();
+            Map<Integer, List<MatchTyping>> typingsByMatch = entry.getValue().stream().collect(Collectors.groupingBy(MatchTyping::getMatchId));
+            MatchTypings matchTyping = new MatchTypings();
+            //for every match in that date
+            for (Map.Entry<Integer, List<MatchTyping>> matchEntry : typingsByMatch.entrySet()) {
+                List<UserTyping> userMatchTypings = new ArrayList<>();
+                String match = null;
+                //for every typing in that match
+                for (MatchTyping userTypings : matchEntry.getValue()) {
+                    if(match == null) {
+                        match = String.format("%s - %s", userTypings.getHomeTeam(), userTypings.getAwayTeam());
+                    }
+                    UserTyping userTyping = new UserTyping()
+                            .setResult(String.format("%d - %d", userTypings.getHomeScore(), userTypings.getAwayScore()))
+                            .setUsername(userService.getByUserId(userTypings.getUserId()).getUsername());
+                    userMatchTypings.add(userTyping);
+                }
+                //put into map pair match - list of typings
+                userMatchTypings.sort(Comparator.comparing(UserTyping::getUsername));
+                matchTyping.getMatchTypings().put(match, userMatchTypings);
+            }
+            usersTypings.put(entryDate, matchTyping);
+        }
+        return usersTypings;
     }
 }
