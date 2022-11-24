@@ -4,7 +4,6 @@ import com.pszemek.mtjworldcupstandings.dto.*;
 import com.pszemek.mtjworldcupstandings.entity.Match;
 import com.pszemek.mtjworldcupstandings.entity.MatchTyping;
 import com.pszemek.mtjworldcupstandings.entity.User;
-import com.pszemek.mtjworldcupstandings.enums.TypingResultEnum;
 import com.pszemek.mtjworldcupstandings.mapper.MatchTypingFootballMatchOutputMapper;
 import com.pszemek.mtjworldcupstandings.repository.MatchTypingRepository;
 import org.slf4j.Logger;
@@ -15,6 +14,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.pszemek.mtjworldcupstandings.enums.TypingResultEnum.CORRECT;
 
 @Service
 public class TypingsService {
@@ -73,7 +74,7 @@ public class TypingsService {
         Map<Long, List<MatchTyping>> typingsByUserId = typingRepository.findAll().stream().collect(Collectors.groupingBy(MatchTyping::getUserId));
         Map<Long, Integer> typerScoreMap = new TreeMap<>();
         for (Map.Entry<Long, List<MatchTyping>> entry : typingsByUserId.entrySet()) {
-            List<MatchTyping> correctTypings = entry.getValue().stream().filter(typing -> typing.getStatus() == TypingResultEnum.CORRECT).collect(Collectors.toList());
+            List<MatchTyping> correctTypings = entry.getValue().stream().filter(typing -> typing.getStatus() == CORRECT).collect(Collectors.toList());
             typerScoreMap.put(entry.getKey(), correctTypings.size());
         }
         List<TyperScore> typerScoreList = new ArrayList<>();
@@ -82,6 +83,7 @@ public class TypingsService {
             TyperScore typerScore = new TyperScore()
                     .setUsername(user.getUsername())
                     .setCorrectTypings(entry.getValue())
+                    .setBalance(user.getBalance())
                     .setCountry(user.getCountry());
             typerScoreList.add(typerScore);
         }
@@ -113,7 +115,8 @@ public class TypingsService {
                     }
                     UserTyping userTyping = new UserTyping()
                             .setResult(String.format("%d - %d", userTypings.getHomeScore(), userTypings.getAwayScore()))
-                            .setUsername(userService.getByUserId(userTypings.getUserId()).getUsername());
+                            .setUsername(userService.getByUserId(userTypings.getUserId()).getUsername())
+                            .setCorrect(userTypings.getStatus() == CORRECT);
                     userMatchTypings.add(userTyping);
                 }
                 //put into map pair match - list of typings

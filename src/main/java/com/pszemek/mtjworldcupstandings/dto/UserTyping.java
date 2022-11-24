@@ -9,6 +9,8 @@ public class UserTyping {
     private String username;
     @JsonProperty("result")
     private String result;
+    @JsonProperty("isCorrect")
+    private boolean isCorrect;
 
     public UserTyping setUsername(String username) {
         this.username = username;
@@ -17,6 +19,11 @@ public class UserTyping {
 
     public UserTyping setResult(String result) {
         this.result = result;
+        return this;
+    }
+
+    public UserTyping setCorrect(boolean correct) {
+        isCorrect = correct;
         return this;
     }
 }
