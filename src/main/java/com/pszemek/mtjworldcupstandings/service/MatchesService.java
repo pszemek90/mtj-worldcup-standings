@@ -78,12 +78,14 @@ public class MatchesService {
             }
             Optional<MatchTyping> matchAlreadyTyped = matchTypingRepository.findByUserIdAndMatchId(userId, match.getId());
             if(matchAlreadyTyped.isPresent()){
+                checkBlankScore(userId, match);
                 logger.info("Match {} - {} was already typed. Updating typing.", match.getHomeTeam(), match.getAwayTeam());
                 MatchTyping matchToUpdate = matchAlreadyTyped.get()
                         .setAwayScore(match.getAwayScore())
                         .setHomeScore(match.getHomeScore());
                 matchTypingRepository.save(matchToUpdate);
             } else {
+                checkBlankScore(userId, match);
                 logger.info("Match {} - {} is typed for the first time. Sending new type and lowering balance",
                         match.getHomeTeam(), match.getAwayTeam());
                 MatchTyping typing = MatchTypingFootballMatchOutputMapper.mapToEntity(match);
@@ -93,6 +95,13 @@ public class MatchesService {
                 lowerBalanceByOne(userId, typing);
                 raisePoolByOne(match);
             }
+        }
+    }
+
+    private void checkBlankScore(Long userId, FootballMatchOutput match) {
+        if(match.getHomeScore() == null || match.getAwayScore() == null){
+            logger.error("Home score or away score for match: {}, for user: {} was blank", match.getId(), userId);
+            throw new IllegalStateException("Home score or away score cannot be blank!");
         }
     }
 
